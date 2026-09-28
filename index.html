@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="NAMBWA Digital Training Institute — Unlocking Technology through practical digital skills. Apply online and access the student portal.">
+  <title>NAMBWA Digital Training Institute</title>
+  <link rel="icon" href="logo.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="topbar"><div class="container topbar-inner"><span>Practical digital skills for a changing world</span><span>Application fee: <strong>KSh 1,000</strong> · Till <strong>354536</strong></span></div></div>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="#home"><img src="logo.jpg" alt="NAMBWA Digital Training Institute logo"><span><b>NAMBWA</b><small>DIGITAL TRAINING INSTITUTE</small></span></a>
+      <button class="menu-btn" aria-label="Open menu" onclick="toggleMenu()">☰</button>
+      <nav id="nav"><a href="#home">Home</a><a href="#about">About</a><a href="#programs">Programs</a><a href="#admission">Admission</a><a href="#portal">Student Portal</a><a href="#contact">Contact</a><a class="nav-cta" href="#admission">Apply Now</a></nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">UNLOCKING TECHNOLOGY</div>
+          <h1>Build digital skills that move your future forward.</h1>
+          <p>Learn practical technology skills at NAMBWA Digital Training Institute through career-focused programs, guided training, and student support.</p>
+          <div class="hero-actions"><a class="btn primary" href="#programs">Explore Programs</a><a class="btn secondary" href="#admission">Start Admission</a></div>
+          <div class="trust-row"><span>✓ Practical learning</span><span>✓ Online classes available</span><span>✓ Student portal</span></div>
+        </div>
+        <div class="hero-card">
+          <div class="hero-card-glow"></div>
+          <img src="classroom.jpg" alt="NAMBWA students in a computer training class" class="hero-photo">
+          <div class="mini-stat"><strong>15</strong><span>Career-ready programs</span></div>
+          <div class="mini-stat"><strong>KSh 1,000</strong><span>Application fee</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section stats-section"><div class="container stats"><div><strong>15</strong><span>Programs</span></div><div><strong>KSh 1,000</strong><span>Application fee</span></div><div><strong>24/7</strong><span>Online classes & portal access</span></div><div><strong>100%</strong><span>Digital-first admission</span></div></div></section>
+
+    <section id="about" class="section"><div class="container two-col"><div><div class="section-kicker">ABOUT NAMBWA</div><h2>Technology education designed around practical skills.</h2></div><div><p class="lead">NAMBWA Digital Training Institute is positioned as a modern skills institution helping learners gain practical confidence in everyday computing, creative technology, networking and emerging digital tools.</p><p>Online classes are available, giving learners the flexibility to study from wherever they are while staying connected to their course materials and support.</p><p>Our website is designed to make the journey simple: discover a program, register online, pay the KSh 1,000 application fee, track your application and continue learning through your student portal.</p><div class="feature-list"><span>Practical, job-relevant learning</span><span>Digital admission workflow</span><span>Online classes available</span><span>Learning materials online</span><span>Results and certificates portal</span></div></div></div></section>
+
+    <section id="programs" class="section soft"><div class="container"><div class="section-head"><div><div class="section-kicker">OUR PROGRAMS</div><h2>Choose a program. Start building.</h2></div><p>Explore our 15 practical programs, including on-campus and online learning options.</p></div><div class="program-grid" id="programGrid"></div></div></section>
+
+    <section id="admission" class="section"><div class="container admission-grid"><div class="admission-info"><div class="section-kicker">ONLINE ADMISSION</div><h2>Reserve your place at NAMBWA.</h2><p>Choose your program, complete your details and pay the <strong>KSh 1,000</strong> application fee via Till No. <strong>354536</strong> or use STK Push when automatic M-Pesa is enabled. <strong>Online classes are available.</strong></p><div class="payment-note"><div class="mpesa-badge">M-PESA</div><div><strong>Till No. 354536</strong><span>Application fee · KSh 1,000</span></div></div><div class="steps"><div><b>01</b><span>Choose a program</span></div><div><b>02</b><span>Register online</span></div><div><b>03</b><span>Pay KSh 1,000</span></div><div><b>04</b><span>Upload admission documents</span></div><div><b>05</b><span>Receive your application reference</span></div></div></div>
+      <form class="card form-card" id="admissionForm">
+        <div class="form-title">Student registration</div><p class="muted">Fields marked * are required.</p>
+        <label>Full name *<input name="fullName" required placeholder="Your full name"></label>
+        <div class="form-row"><label>Phone number *<input name="phone" required placeholder="07XX XXX XXX" inputmode="tel"></label><label>Email *<input name="email" type="email" required placeholder="you@example.com"></label></div>
+        <label>Program *<select name="course" id="courseSelect" required></select></label>
+        <label>Preferred intake *<select name="intake" required><option value="January 2027">January 2027</option><option value="April 2027">April 2027</option><option value="May 2027">May 2027</option><option value="September 2027">September 2027</option></select></label>
+        <div class="upload-section">
+          <div class="upload-title">Required admission documents</div>
+          <p class="muted">Upload clear copies of the following documents. PDF, JPG, JPEG or PNG accepted.</p>
+          <div class="upload-grid">
+            <label class="upload-box"><span>📷 Passport Photo *</span><small>JPG/PNG · max 10MB</small><input type="file" name="passportPhoto" accept="image/jpeg,image/png" required></label>
+            <label class="upload-box"><span>📄 KCSE Certificate *</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="kcseCertificate" accept="application/pdf,image/jpeg,image/png" required></label>
+            <label class="upload-box"><span>📄 KCPE Certificate *</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="kcpeCertificate" accept="application/pdf,image/jpeg,image/png" required></label>
+            <label class="upload-box"><span>📜 Birth Certificate *</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="birthCertificate" accept="application/pdf,image/jpeg,image/png" required></label>
+            <label class="upload-box"><span>📝 Chief's Recommendation *</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="chiefRecommendation" accept="application/pdf,image/jpeg,image/png" required></label>
+          </div>
+        </div>
+        <div class="pay-choice"><label class="radio"><input type="radio" name="paymentMethod" value="till" checked onchange="togglePaymentFields()"><span>Pay by Till</span></label><label class="radio"><input type="radio" name="paymentMethod" value="stk" onchange="togglePaymentFields()"><span>Automatic STK Push</span></label></div>
+        <div id="tillFields"><label>M-Pesa transaction code<input name="transactionCode" placeholder="Enter code after paying the Till"></label><div class="hint">Pay KSh 1,000 to Till <strong>354536</strong>, then enter the transaction code above.</div></div>
+        <div id="stkFields" class="hidden"><div class="stk-box">We’ll request KSh 1,000 on the phone number you provide. Your application reference is used in the payment account reference.</div></div>
+        <button class="btn primary full" type="submit" id="submitBtn">Submit application</button>
+        <p class="small-note">By submitting, you confirm that the information provided is accurate.</p>
+        <div id="formMessage" class="form-message" role="status"></div>
+      </form>
+    </div></section>
+
+    <section id="portal" class="section soft"><div class="container portal-grid"><div class="portal-copy"><div class="section-kicker">STUDENT PORTAL</div><h2>One place for your NAMBWA journey.</h2><p>Secure access to applications, payments, learning materials, results and certificates.</p><div class="portal-features"><span>Application status</span><span>Payment history</span><span>Course materials</span><span>Results & certificates</span></div></div><div class="card portal-card"><div class="portal-header"><span>Student Portal</span><span class="live">Secure access</span></div><div class="portal-tabs"><button class="portal-tab active" onclick="showPortalPanel('loginPanel', this)">Sign in</button><button class="portal-tab" onclick="showPortalPanel('activatePanel', this)">Activate account</button></div><div id="loginPanel" class="portal-login"><label>Student email<input id="studentLoginEmail" type="email" placeholder="you@example.com"></label><label>Password<input id="studentLoginPassword" type="password" placeholder="Your password"></label><button class="btn primary full" onclick="studentLogin()">Sign in to portal</button><div id="loginMessage" class="form-message"></div></div><div id="activatePanel" class="portal-login hidden"><label>Application reference<input id="activateRef" placeholder="NAMBWA-2026-XXXXXXXX"></label><label>Student email<input id="activateEmail" type="email" placeholder="you@example.com"></label><label>Create password<input id="activatePassword" type="password" minlength="8" placeholder="At least 8 characters"></label><button class="btn primary full" onclick="activateStudent()">Activate student account</button><div class="hint">Use the application reference and email you received after admission. Your account will be linked to your application.</div><div id="activateMessage" class="form-message"></div></div><div id="portalResult" class="portal-result hidden"></div></div></div></section>
+
+    <section id="contact" class="section contact"><div class="container contact-grid"><div><div class="section-kicker">CONTACT</div><h2>Ready to unlock technology?</h2><p>Talk to the institute about programs, admissions and student support.</p></div><div class="contact-card"><div><span>Email</span><strong>nambwadigital@gmail.com</strong></div><div><span>Phone</span><strong>0733536145</strong></div><div><span>Classes</span><strong>Online classes available</strong></div><div><span>M-Pesa Till</span><strong>354536</strong></div><a href="#admission" class="btn secondary">Apply online</a></div></div></section>
+  </main>
+
+  <footer><div class="container footer-grid"><div class="brand footer-brand"><img src="logo.jpg" alt="NAMBWA logo"><span><b>NAMBWA</b><small>DIGITAL TRAINING INSTITUTE</small></span></div><p>Unlocking Technology.</p><p>© <span id="year"></span> NAMBWA Digital Training Institute. All rights reserved.</p></div></footer>
+
+  <div class="modal hidden" id="successModal"><div class="modal-card"><button class="close" onclick="closeModal()">×</button><div class="success-icon">✓</div><div class="section-kicker">APPLICATION RECEIVED</div><h2>You’re on your way.</h2><p id="successText"></p><div class="ref-box"><span>Application reference</span><strong id="successRef"></strong></div><a class="btn primary full" href="#portal" onclick="closeModal()">Go to Student Portal</a></div></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "nambwa-digital-training-institute",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Production-ready website and student admissions portal for NAMBWA Digital Training Institute",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "hash-password": "node scripts/hash-password.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "connect-pg-simple": "^10.0.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.2",
+    "pg": "^8.16.3",
+    "express-session": "^1.18.2"
+  }
+}
