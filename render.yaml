@@ -1,7 +1,8 @@
 services:
   - type: web
-    name: nambwa-digital-training-institute
+    name: nambwa-digital-training-institute-dvmo
     runtime: node
+    region: singapore
     plan: starter
     buildCommand: npm install
     startCommand: npm start
@@ -45,7 +46,7 @@ services:
       sizeGB: 10
 
 databases:
-  - name: nambwa-postgres
+  - name: nambwa-postgres-dvmo
     plan: basic-256mb
     region: singapore
     postgresMajorVersion: "18"
