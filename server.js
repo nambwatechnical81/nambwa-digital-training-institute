@@ -69,6 +69,7 @@ app.get('/robots.txt', (req, res) => {
     'User-agent: *',
     'Allow: /',
     'Disallow: /admin.html',
+    'Disallow: /api/',
     `Sitemap: ${base}/sitemap.xml`
   ].join('\n'));
 });
