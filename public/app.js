@@ -1,23 +1,23 @@
 const PROGRAMS = [
-  {name:'Artificial Intelligence', icon:'🤖', desc:'Explore AI concepts, tools and practical digital workflows.'},
-  {name:'Graphic Design', icon:'🎨', desc:'Learn design principles, digital graphics and creative production.'},
-  {name:'Computer Applications', icon:'💻', desc:'Build confidence with everyday productivity and office software.'},
-  {name:'Computer Hardware', icon:'🔧', desc:'Understand PC components, maintenance, troubleshooting and setup.'},
-  {name:'Software Installation', icon:'⚙️', desc:'Learn operating systems, applications, setup and support skills.'},
-  {name:'Networking (CCNA)', icon:'🌐', desc:'Build foundations in networks, addressing, routing and switching.'},
-  {name:'Printing Technology', icon:'🖨️', desc:'Learn digital printing workflows, equipment and production basics.'},
-  {name:'Office Practice', icon:'📋', desc:'Develop efficient workplace administration and office technology skills.'},
-  {name:'Digital Marketing', icon:'📣', desc:'Learn social media, online campaigns, content promotion and digital strategy.'},
-  {name:'Barbering and Hair Locking', icon:'💈', desc:'Build practical skills in barbering, hair locking, grooming and personal care.'},
-  {name:'Phone Repair and Maintenance', icon:'📱', desc:'Learn smartphone diagnostics, repair techniques, maintenance and troubleshooting.'},
-  {name:'Video Editing', icon:'🎬', desc:'Develop video editing skills for social media, business and creative projects.'},
-  {name:'Live Streaming', icon:'📡', desc:'Learn setup, production and delivery of professional live streams.'},
-  {name:'Photography', icon:'📷', desc:'Learn photography fundamentals, composition, lighting and digital image workflows.'},
-  {name:'Sales and Marketing', icon:'📈', desc:'Build practical skills in sales, customer engagement, promotion and marketing strategy.'}
+  {name:'Artificial Intelligence', slug:'artificial-intelligence', icon:'🤖', desc:'Explore AI concepts, tools and practical digital workflows.'},
+  {name:'Graphic Design', slug:'graphic-design', icon:'🎨', desc:'Learn design principles, digital graphics and creative production.'},
+  {name:'Computer Applications', slug:'computer-applications', icon:'💻', desc:'Build confidence with everyday productivity and office software.'},
+  {name:'Computer Hardware', slug:'computer-hardware', icon:'🔧', desc:'Understand PC components, maintenance, troubleshooting and setup.'},
+  {name:'Software Installation', slug:'software-installation', icon:'⚙️', desc:'Learn operating systems, applications, setup and support skills.'},
+  {name:'Networking (CCNA)', slug:'networking-ccna', icon:'🌐', desc:'Build foundations in networks, addressing, routing and switching.'},
+  {name:'Printing Technology', slug:'printing-technology', icon:'🖨️', desc:'Learn digital printing workflows, equipment and production basics.'},
+  {name:'Office Practice', slug:'office-practice', icon:'📋', desc:'Develop efficient workplace administration and office technology skills.'},
+  {name:'Digital Marketing', slug:'digital-marketing', icon:'📣', desc:'Learn social media, online campaigns, content promotion and digital strategy.'},
+  {name:'Barbering and Hair Locking', slug:'barbering-hair-locking', icon:'💈', desc:'Build practical skills in barbering, hair locking, grooming and personal care.'},
+  {name:'Phone Repair and Maintenance', slug:'phone-repair-maintenance', icon:'📱', desc:'Learn smartphone diagnostics, repair techniques, maintenance and troubleshooting.'},
+  {name:'Video Editing', slug:'video-editing', icon:'🎬', desc:'Develop video editing skills for social media, business and creative projects.'},
+  {name:'Live Streaming', slug:'live-streaming', icon:'📡', desc:'Learn setup, production and delivery of professional live streams.'},
+  {name:'Photography', slug:'photography', icon:'📷', desc:'Learn photography fundamentals, composition, lighting and digital image workflows.'},
+  {name:'Sales and Marketing', slug:'sales-and-marketing', icon:'📈', desc:'Build practical skills in sales, customer engagement, promotion and marketing strategy.'}
 ];
 const $ = (s) => document.querySelector(s);
 function renderPrograms(){
-  $('#programGrid').innerHTML = PROGRAMS.map((p,i)=>`<article class="program-card"><div class="program-icon">${p.icon}</div><h3>${p.name}</h3><p>${p.desc}</p><a class="apply" href="#admission" onclick="chooseCourse(${i})">Apply for this course →</a></article>`).join('');
+  $('#programGrid').innerHTML = PROGRAMS.map((p,i)=>`<article class="program-card"><div class="program-icon">${p.icon}</div><h3><a href="/programs/${p.slug}">${p.name}</a></h3><p>${p.desc}</p><a class="apply" href="/programs/${p.slug}">View course & apply →</a></article>`).join('');
   $('#courseSelect').innerHTML = `<option value="">Select a program</option>` + PROGRAMS.map(p=>`<option>${p.name}</option>`).join('');
 }
 function chooseCourse(i){ $('#courseSelect').value=PROGRAMS[i].name; }
@@ -99,3 +99,8 @@ function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':
 document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',()=>$('#nav').classList.remove('open')));
 document.getElementById('year').textContent=new Date().getFullYear();
 renderPrograms();
+const requestedCourse = new URLSearchParams(location.search).get('course');
+if (requestedCourse) {
+  const match = PROGRAMS.find(p => p.slug === requestedCourse);
+  if (match) $('#courseSelect').value = match.name;
+}
