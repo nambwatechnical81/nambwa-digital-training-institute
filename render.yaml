@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: nambwa-digital-training-institute-dvmo
+    name: nambwa-digital-training-institute-kenya
     runtime: node
     region: singapore
     plan: starter
@@ -46,7 +46,7 @@ services:
       sizeGB: 10
 
 databases:
-  - name: nambwa-postgres-dvmo
+  - name: nambwa-postgres-kenya
     plan: basic-256mb
     region: singapore
     postgresMajorVersion: "18"
