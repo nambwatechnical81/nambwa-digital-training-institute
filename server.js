@@ -79,6 +79,13 @@ app.get('/sitemap.xml', (req, res) => {
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${base}/</loc></url></urlset>`);
 });
 
+app.get(['/logo.jpg', '/classroom.jpg'], (req, res) => {
+  const allowed = new Set(['logo.jpg', 'classroom.jpg']);
+  const file = path.basename(req.path);
+  if (!allowed.has(file)) return res.status(404).end();
+  res.sendFile(path.join(__dirname, file));
+});
+
 app.use(express.static(PUBLIC_DIR, { maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0 }));
 
 const storage = multer.diskStorage({
