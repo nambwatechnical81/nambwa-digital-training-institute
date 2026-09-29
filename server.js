@@ -35,6 +35,25 @@ const PROGRAMS = [
   ['sales-and-marketing','Sales and Marketing','Build practical skills in sales, customer engagement, promotion and marketing strategy.']
 ];
 
+
+const COURSE_DETAILS = {
+  'artificial-intelligence': { learn: ['AI concepts, responsible use and common AI tools', 'Prompting and practical AI-assisted workflows', 'Ways to use AI for study, content and everyday productivity'], audience: 'Learners, professionals and entrepreneurs who want practical AI skills.' },
+  'graphic-design': { learn: ['Design principles, typography, layout and visual communication', 'Digital graphics for branding, social media and print', 'Practical creative workflows for producing polished visual content'], audience: 'Learners interested in creative design, branding and digital content.' },
+  'computer-applications': { learn: ['Everyday computer operation and file management', 'Productivity applications for documents, spreadsheets and presentations', 'Efficient digital workflows for school, business and office tasks'], audience: 'Beginners and anyone who wants stronger everyday computer skills.' },
+  'computer-hardware': { learn: ['PC components and their functions', 'Basic assembly, maintenance and troubleshooting', 'Safe hardware setup and practical support procedures'], audience: 'Learners interested in computer maintenance and technical support.' },
+  'software-installation': { learn: ['Operating-system and application setup fundamentals', 'Software configuration, updates and compatibility checks', 'Practical troubleshooting and user support techniques'], audience: 'Beginners and aspiring technical support assistants.' },
+  'networking-ccna': { learn: ['Network fundamentals, devices and addressing', 'Routing, switching and basic network configuration concepts', 'Practical troubleshooting and network support foundations'], audience: 'Learners pursuing networking and IT support skills.' },
+  'printing-technology': { learn: ['Digital printing workflows and production stages', 'Basic printer operation, setup and maintenance', 'Preparing digital files for practical printing work'], audience: 'Learners interested in printing, production and digital publishing.' },
+  'office-practice': { learn: ['Office administration and workplace organization', 'Document handling, communication and digital office tools', 'Professional workflows for efficient office support'], audience: 'Learners preparing for administrative and office-support roles.' },
+  'digital-marketing': { learn: ['Digital marketing channels and audience targeting', 'Social media content, online promotion and campaign basics', 'Measuring engagement and improving digital campaigns'], audience: 'Entrepreneurs, marketers and learners building online promotion skills.' },
+  'barbering-hair-locking': { learn: ['Barbering tools, grooming techniques and hygiene', 'Hair locking methods and practical styling workflows', 'Client care, presentation and basic service professionalism'], audience: 'Learners seeking practical grooming and personal-care skills.' },
+  'phone-repair-maintenance': { learn: ['Smartphone components, tools and safe handling', 'Basic diagnostics and common repair procedures', 'Preventive maintenance and troubleshooting approaches'], audience: 'Learners interested in mobile-device repair and technical services.' },
+  'video-editing': { learn: ['Video editing workflow, timelines and media organization', 'Cuts, transitions, audio and visual enhancement', 'Producing videos for social media, business and creative projects'], audience: 'Creators, entrepreneurs and learners developing video-production skills.' },
+  'live-streaming': { learn: ['Live-streaming equipment, software and basic setup', 'Audio, video and scene preparation for live production', 'Publishing and managing live sessions for online audiences'], audience: 'Creators, organizations and learners interested in online live production.' },
+  'photography': { learn: ['Camera and photography fundamentals', 'Composition, lighting and practical shooting techniques', 'Digital image organization and basic post-production workflows'], audience: 'Beginners, creators and learners developing practical photography skills.' },
+  'sales-and-marketing': { learn: ['Customer engagement and practical sales techniques', 'Promotion, product presentation and marketing fundamentals', 'Communication and relationship-building for business growth'], audience: 'Learners, sales assistants and entrepreneurs developing commercial skills.' }
+};
+
 const REQUIRED_DOCUMENTS = [
   'passportPhoto',
   'kcseCertificate',
@@ -110,11 +129,23 @@ app.get(['/logo.jpg', '/classroom.jpg'], (req, res) => {
 app.use(express.static(PUBLIC_DIR, { maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0 }));
 app.get('/programs/:slug', (req, res) => {
   const program = PROGRAMS.find(([slug]) => slug === req.params.slug);
-  if (!program) return res.status(404).sendFile(path.join(PUBLIC_DIR, '404.html'));
+  if (!program) {
+    return res.status(404).send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found | NAMBWA Digital Training Institute</title><meta name="robots" content="noindex, follow"></head><body><main style="max-width:760px;margin:0 auto;padding:48px 24px"><h1>Page not found</h1><p>The page you requested could not be found.</p><p><a href="/">Return to NAMBWA Digital Training Institute</a></p></main></body></html>`);
+  }
   const [slug, name, description] = program;
+  const details = COURSE_DETAILS[slug] || { learn: ['Practical concepts and guided exercises', 'Useful skills for study, work and business', 'Hands-on workflows supported by the institute'], audience: 'Learners seeking practical skills.' };
   const base = `${req.protocol}://${req.get('host')}`;
   const canonical = `${base}/programs/${slug}`;
-  const structuredData = {
+  const breadcrumbData = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: base + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Courses', item: base + '/#programs' },
+      { '@type': 'ListItem', position: 3, name, item: canonical }
+    ]
+  };
+  const courseData = {
     '@context': 'https://schema.org',
     '@type': 'Course',
     name,
@@ -122,32 +153,40 @@ app.get('/programs/:slug', (req, res) => {
     url: canonical,
     provider: { '@type': 'EducationalOrganization', name: 'NAMBWA Digital Training Institute', url: base + '/' }
   };
+  const esc = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const html = `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${name} Course in Kenya | NAMBWA Digital Training Institute</title>
-  <meta name="description" content="${description} Study at NAMBWA Digital Training Institute in Kenya with practical, career-focused digital skills training.">
+  <title>${esc(name)} Course in Kenya | NAMBWA Digital Training Institute</title>
+  <meta name="description" content="${esc(description)} Study at NAMBWA Digital Training Institute in Kenya with practical, career-focused digital skills training.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="${canonical}">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="${name} Course | NAMBWA Digital Training Institute">
-  <meta property="og:description" content="${description}">
+  <meta property="og:title" content="${esc(name)} Course | NAMBWA Digital Training Institute">
+  <meta property="og:description" content="${esc(description)}">
   <meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${base}/logo.jpg">
   <meta property="og:site_name" content="NAMBWA Digital Training Institute">
   <link rel="stylesheet" href="/styles.css">
-  <script type="application/ld+json">${JSON.stringify(structuredData)}</script>
+  <script type="application/ld+json">${JSON.stringify(courseData)}</script>
+  <script type="application/ld+json">${JSON.stringify(breadcrumbData)}</script>
 </head>
 <body>
   <main style="max-width:900px;margin:0 auto;padding:48px 24px">
-    <p><a href="/">NAMBWA Digital Training Institute</a> / Courses / ${name}</p>
-    <h1>${name} Course in Kenya</h1>
-    <p style="font-size:1.15rem;line-height:1.7">${description}</p>
-    <h2>About this course</h2>
-    <p>This program is part of the practical skills training offered by NAMBWA Digital Training Institute. Training is designed to help learners build useful digital and career skills through guided learning and student support.</p>
-    <p><a href="/?course=${slug}#admission">Apply for ${name}</a></p>
+    <nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="/#programs">Courses</a> / <span>${esc(name)}</span></nav>
+    <h1>${esc(name)} Course in Kenya</h1>
+    <p style="font-size:1.15rem;line-height:1.7">${esc(description)}</p>
+    <h2>What you can learn</h2>
+    <ul>${details.learn.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
+    <h2>Who this course is for</h2>
+    <p>${esc(details.audience)}</p>
+    <h2>Practical skills and career preparation</h2>
+    <p>This program focuses on practical learning that can help students apply their skills in school, employment, freelancing, entrepreneurship or everyday digital work. Learning is supported by guided training and student support at NAMBWA Digital Training Institute.</p>
+    <h2>How to apply</h2>
+    <p>Use the online application form to select this course and submit your admission details.</p>
+    <p><a href="/?course=${encodeURIComponent(slug)}#admission">Apply for ${esc(name)}</a></p>
     <p><a href="/#programs">View all programs</a> · <a href="/#contact">Contact the institute</a></p>
   </main>
 </body>
