@@ -16,6 +16,25 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
+
+const PROGRAMS = [
+  ['artificial-intelligence','Artificial Intelligence','Explore AI concepts, tools and practical digital workflows.'],
+  ['graphic-design','Graphic Design','Learn design principles, digital graphics and creative production.'],
+  ['computer-applications','Computer Applications','Build confidence with everyday productivity and office software.'],
+  ['computer-hardware','Computer Hardware','Understand PC components, maintenance, troubleshooting and setup.'],
+  ['software-installation','Software Installation','Learn operating systems, applications, setup and support skills.'],
+  ['networking-ccna','Networking (CCNA)','Build foundations in networks, addressing, routing and switching.'],
+  ['printing-technology','Printing Technology','Learn digital printing workflows, equipment and production basics.'],
+  ['office-practice','Office Practice','Develop efficient workplace administration and office technology skills.'],
+  ['digital-marketing','Digital Marketing','Learn social media, online campaigns, content promotion and digital strategy.'],
+  ['barbering-hair-locking','Barbering and Hair Locking','Build practical skills in barbering, hair locking, grooming and personal care.'],
+  ['phone-repair-maintenance','Phone Repair and Maintenance','Learn smartphone diagnostics, repair techniques, maintenance and troubleshooting.'],
+  ['video-editing','Video Editing','Develop video editing skills for social media, business and creative projects.'],
+  ['live-streaming','Live Streaming','Learn setup, production and delivery of professional live streams.'],
+  ['photography','Photography','Learn photography fundamentals, composition, lighting and digital image workflows.'],
+  ['sales-and-marketing','Sales and Marketing','Build practical skills in sales, customer engagement, promotion and marketing strategy.']
+];
+
 const REQUIRED_DOCUMENTS = [
   'passportPhoto',
   'kcseCertificate',
@@ -76,8 +95,9 @@ app.get('/robots.txt', (req, res) => {
 
 app.get('/sitemap.xml', (req, res) => {
   const base = `${req.protocol}://${req.get('host')}`;
-  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n` +
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${base}/</loc></url></urlset>`);
+  const urls = ['/', ...PROGRAMS.map(program => '/programs/' + program[0])];
+  const body = urls.map(url => `<url><loc>${base}${url}</loc></url>`).join('');
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`);
 });
 
 app.get(['/logo.jpg', '/classroom.jpg'], (req, res) => {
@@ -88,6 +108,53 @@ app.get(['/logo.jpg', '/classroom.jpg'], (req, res) => {
 });
 
 app.use(express.static(PUBLIC_DIR, { maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0 }));
+app.get('/programs/:slug', (req, res) => {
+  const program = PROGRAMS.find(([slug]) => slug === req.params.slug);
+  if (!program) return res.status(404).sendFile(path.join(PUBLIC_DIR, '404.html'));
+  const [slug, name, description] = program;
+  const base = `${req.protocol}://${req.get('host')}`;
+  const canonical = `${base}/programs/${slug}`;
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name,
+    description,
+    url: canonical,
+    provider: { '@type': 'EducationalOrganization', name: 'NAMBWA Digital Training Institute', url: base + '/' }
+  };
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${name} Course in Kenya | NAMBWA Digital Training Institute</title>
+  <meta name="description" content="${description} Study at NAMBWA Digital Training Institute in Kenya with practical, career-focused digital skills training.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="${canonical}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="${name} Course | NAMBWA Digital Training Institute">
+  <meta property="og:description" content="${description}">
+  <meta property="og:url" content="${canonical}">
+  <meta property="og:image" content="${base}/logo.jpg">
+  <meta property="og:site_name" content="NAMBWA Digital Training Institute">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="application/ld+json">${JSON.stringify(structuredData)}</script>
+</head>
+<body>
+  <main style="max-width:900px;margin:0 auto;padding:48px 24px">
+    <p><a href="/">NAMBWA Digital Training Institute</a> / Courses / ${name}</p>
+    <h1>${name} Course in Kenya</h1>
+    <p style="font-size:1.15rem;line-height:1.7">${description}</p>
+    <h2>About this course</h2>
+    <p>This program is part of the practical skills training offered by NAMBWA Digital Training Institute. Training is designed to help learners build useful digital and career skills through guided learning and student support.</p>
+    <p><a href="/?course=${slug}#admission">Apply for ${name}</a></p>
+    <p><a href="/#programs">View all programs</a> · <a href="/#contact">Contact the institute</a></p>
+  </main>
+</body>
+</html>`;
+  res.type('html').send(html);
+});
+
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
