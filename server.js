@@ -304,7 +304,8 @@ function publicApplication(row) {
     paymentStatus: row.payment_status,
     applicationStatus: row.application_status,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
+    documentsCount: Number(row.documents_count || 0)
   };
 }
 async function getApplication(id) {
@@ -448,6 +449,16 @@ app.get('/api/student/documents/:applicationId/:field', requireRole('student'), 
   } catch (err) { next(err); }
 });
 
+app.get('/api/admin/applications/:id/documents/:field', requireRole('admin'), async (req, res, next) => {
+  try {
+    const r = await db('SELECT * FROM application_documents WHERE application_id=$1 AND field_name=$2', [req.params.id, req.params.field]);
+    if (!r.rowCount) return res.status(404).json({ error: 'Document not found.' });
+    const f = r.rows[0];
+    const filePath = path.join(UPLOAD_DIR, f.stored_name);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File is unavailable.' });
+    res.type(f.mime_type).download(filePath, f.original_name);
+  } catch (err) { next(err); }
+});
 app.get('/api/admin/applications', requireRole('admin'), async (_req, res, next) => {
   try {
     const r = await db(`SELECT a.*, COUNT(d.id)::int AS documents_count FROM applications a LEFT JOIN application_documents d ON d.application_id=a.id GROUP BY a.id ORDER BY a.created_at DESC`);
