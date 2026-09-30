@@ -420,9 +420,9 @@ app.post('/api/admin/login', authLimiter, async (req, res) => {
   const { email, password } = req.body || {};
   if (!process.env.ADMIN_EMAIL || (!process.env.ADMIN_PASSWORD_HASH && !process.env.ADMIN_PASSWORD)) return res.status(503).json({ error: 'Admin access is not configured.' });
   const suppliedPassword = String(password || '');
-  const validPassword = process.env.ADMIN_PASSWORD_HASH
-    ? await bcrypt.compare(suppliedPassword, process.env.ADMIN_PASSWORD_HASH)
-    : suppliedPassword === String(process.env.ADMIN_PASSWORD);
+  const validPassword = process.env.ADMIN_PASSWORD
+    ? suppliedPassword === String(process.env.ADMIN_PASSWORD)
+    : await bcrypt.compare(suppliedPassword, process.env.ADMIN_PASSWORD_HASH);
   if (String(email || '').trim().toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase() || !validPassword) return res.status(401).json({ error: 'Invalid administrator credentials.' });
   req.session.user = { role: 'admin', email: process.env.ADMIN_EMAIL, name: 'Administrator' };
   res.json({ user: req.session.user });
