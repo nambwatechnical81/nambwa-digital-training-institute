@@ -44,7 +44,7 @@ $('#admissionForm').addEventListener('submit', async (e)=>{
       const demoRef='NAMBWA-'+new Date().getFullYear()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
       result={applicationId:demoRef,paymentStatus:data.transactionCode?'pending-verification':'pending-payment'};
       const demoApps=JSON.parse(localStorage.getItem('nambwa_demo_apps')||'[]');
-      demoApps.unshift({...data,id:demoRef,amount:1000,applicationStatus:'submitted',paymentStatus:result.paymentStatus,documentsUploaded:[...['passportPhoto','kcseCertificate','kcpeCertificate','birthCertificate','chiefRecommendation'].map(k=>f.get(k)).filter(v=>v && v.name).map(v=>v.name)]});
+      demoApps.unshift({...data,id:demoRef,amount:500,applicationStatus:'submitted',paymentStatus:result.paymentStatus,documentsUploaded:[...['passportPhoto','kcseCertificate','kcpeCertificate','birthCertificate','chiefRecommendation'].map(k=>f.get(k)).filter(v=>v && v.name).map(v=>v.name)]});
       localStorage.setItem('nambwa_demo_apps',JSON.stringify(demoApps));
     }
     localStorage.setItem('nambwa_last_application',result.applicationId);
@@ -55,7 +55,7 @@ $('#admissionForm').addEventListener('submit', async (e)=>{
         if(!stk.ok) throw new Error(stkResult.error||'Automatic M-Pesa could not be initiated.');
         openModal(result.applicationId,'Your application is registered. Check your phone for the M-Pesa payment prompt, then keep this reference for your records.');
       } catch(stkErr) {
-        openModal(result.applicationId,'Your application is registered. Automatic M-Pesa is not active on this preview yet, so please pay KSh 1,000 to Till 354536 and submit the transaction code for verification.');
+        openModal(result.applicationId,'Your application is registered. Automatic M-Pesa is not active on this preview yet, so please pay KSh 500 to Till 354536 and submit the transaction code for verification.');
       }
     } else {
       openModal(result.applicationId,'Your application has been received. Your Till payment will remain pending verification until the transaction is confirmed by the institute.');
