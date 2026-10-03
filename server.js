@@ -54,13 +54,14 @@ const COURSE_DETAILS = {
   'sales-and-marketing': { learn: ['Customer engagement and practical sales techniques', 'Promotion, product presentation and marketing fundamentals', 'Communication and relationship-building for business growth'], audience: 'Learners, sales assistants and entrepreneurs developing commercial skills.' }
 };
 
-const REQUIRED_DOCUMENTS = [
+const DOCUMENT_FIELDS = [
   'passportPhoto',
   'kcseCertificate',
   'kcpeCertificate',
   'birthCertificate',
   'chiefRecommendation'
 ];
+const REQUIRED_DOCUMENTS = ['passportPhoto', 'chiefRecommendation'];
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -159,8 +160,8 @@ app.get('/programs/:slug', (req, res) => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${esc(name)} Course in Kenya | NAMBWA Digital Training Institute</title>
-  <meta name="description" content="${esc(description)} Study at NAMBWA Digital Training Institute in Kenya with practical, career-focused digital skills training.">
+  <title>${esc(name)} Course | NAMBWA Digital Training Institute</title>
+  <meta name="description" content="${esc(description)} Study at NAMBWA Digital Training Institute with practical, career-focused digital skills training.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="${canonical}">
   <meta property="og:type" content="website">
@@ -176,7 +177,7 @@ app.get('/programs/:slug', (req, res) => {
 <body>
   <main style="max-width:900px;margin:0 auto;padding:48px 24px">
     <nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="/#programs">Courses</a> / <span>${esc(name)}</span></nav>
-    <h1>${esc(name)} Course in Kenya</h1>
+    <h1>${esc(name)} Course</h1>
     <p style="font-size:1.15rem;line-height:1.7">${esc(description)}</p>
     <h2>What you can learn</h2>
     <ul>${details.learn.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
@@ -186,8 +187,7 @@ app.get('/programs/:slug', (req, res) => {
     <p>This program focuses on practical learning that can help students apply their skills in school, employment, freelancing, entrepreneurship or everyday digital work. Learning is supported by guided training and student support at NAMBWA Digital Training Institute.</p>
     <h2>How to apply</h2>
     <p>Use the online application form to select this course and submit your admission details.</p>
-    <p><a href="/?course=${encodeURIComponent(slug)}#admission">Apply for ${esc(name)}</a></p>
-    <p><a href="/#programs">View all programs</a> · <a href="/#contact">Contact the institute</a></p>
+    <div class="course-actions"><a class="btn primary" href="/?course=${encodeURIComponent(slug)}#admission">Apply for this course</a><a class="btn secondary" href="/#programs">View all programs</a><a class="btn secondary" href="/#contact">Contact the institute</a></div>
   </main>
 </body>
 </html>`;
@@ -201,7 +201,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { files: REQUIRED_DOCUMENTS.length, fileSize: 10 * 1024 * 1024 },
+  limits: { files: DOCUMENT_FIELDS.length, fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = new Set(['image/jpeg', 'image/png', 'application/pdf']);
     cb(allowed.has(file.mimetype) ? null : new Error('Only JPG, PNG or PDF files are allowed.'));
@@ -223,7 +223,7 @@ async function initDb() {
       intake TEXT NOT NULL,
       payment_method TEXT NOT NULL,
       transaction_code TEXT,
-      amount INTEGER NOT NULL DEFAULT 1000,
+      amount INTEGER NOT NULL DEFAULT 500,
       payment_status TEXT NOT NULL DEFAULT 'pending-payment',
       application_status TEXT NOT NULL DEFAULT 'submitted',
       checkout_request_id TEXT,
@@ -305,7 +305,8 @@ function publicApplication(row) {
     applicationStatus: row.application_status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    documentsCount: Number(row.documents_count || 0)
+    documentsCount: Number(row.documents_count || 0),
+    documentFields: Array.isArray(row.document_fields) ? row.document_fields : []
   };
 }
 async function getApplication(id) {
@@ -331,7 +332,7 @@ app.get('/health', async (_req, res) => {
 app.get('/api/config', (_req, res) => {
   res.json({
     institute: 'NAMBWA DIGITAL TRAINING INSTITUTE',
-    applicationFee: 1000,
+    applicationFee: 500,
     till: '354536',
     email: 'nambwadigital@gmail.com',
     phone: '0733536145',
@@ -341,7 +342,7 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
-app.post('/api/applications', upload.fields(REQUIRED_DOCUMENTS.map(name => ({ name, maxCount: 1 }))), async (req, res, next) => {
+app.post('/api/applications', upload.fields(DOCUMENT_FIELDS.map(name => ({ name, maxCount: 1 }))), async (req, res, next) => {
   try {
     const { fullName, phone, email, course, intake, transactionCode, paymentMethod } = req.body || {};
     if (!fullName || !phone || !email || !course || !intake || !paymentMethod) return res.status(400).json({ error: 'Please complete all required registration fields.' });
@@ -355,20 +356,21 @@ app.post('/api/applications', upload.fields(REQUIRED_DOCUMENTS.map(name => ({ na
     try {
       await client.query('BEGIN');
       await client.query(`INSERT INTO applications (id, full_name, phone, email, course, intake, payment_method, transaction_code, amount, payment_status)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1000,$9)`, [
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,500,$9)`, [
         id, String(fullName).trim(), normalized, String(email).trim().toLowerCase(), String(course).trim(), String(intake).trim(), paymentMethod,
         transactionCode ? String(transactionCode).trim() : null,
         transactionCode ? 'pending-verification' : 'pending-payment'
       ]);
-      for (const field of REQUIRED_DOCUMENTS) {
-        const file = req.files[field][0];
+      for (const field of DOCUMENT_FIELDS) {
+        const file = req.files?.[field]?.[0];
+        if (!file) continue;
         await client.query(`INSERT INTO application_documents (application_id, field_name, original_name, stored_name, mime_type, size_bytes)
                   VALUES ($1,$2,$3,$4,$5,$6)`, [id, field, file.originalname, file.filename, file.mimetype, file.size]);
       }
       await client.query('COMMIT');
     } catch (e) {
       await client.query('ROLLBACK');
-      for (const field of REQUIRED_DOCUMENTS) {
+      for (const field of DOCUMENT_FIELDS) {
         const file = req.files?.[field]?.[0];
         if (file) fs.rmSync(file.path, { force: true });
       }
@@ -465,7 +467,7 @@ app.get('/api/admin/applications/:id/documents/:field', requireRole('admin'), as
 });
 app.get('/api/admin/applications', requireRole('admin'), async (_req, res, next) => {
   try {
-    const r = await db(`SELECT a.*, COUNT(d.id)::int AS documents_count FROM applications a LEFT JOIN application_documents d ON d.application_id=a.id GROUP BY a.id ORDER BY a.created_at DESC`);
+    const r = await db(`SELECT a.*, COUNT(d.id)::int AS documents_count, COALESCE(array_agg(d.field_name) FILTER (WHERE d.id IS NOT NULL), ARRAY[]::text[]) AS document_fields FROM applications a LEFT JOIN application_documents d ON d.application_id=a.id GROUP BY a.id ORDER BY a.created_at DESC`);
     res.json(r.rows.map(publicApplication));
   } catch (err) { next(err); }
 });
@@ -527,7 +529,7 @@ app.post('/api/mpesa/stkpush', authLimiter, async (req, res, next) => {
       Password: password,
       Timestamp: timestamp,
       TransactionType: process.env.MPESA_TRANSACTION_TYPE || 'CustomerBuyGoodsOnline',
-      Amount: 1000,
+      Amount: 500,
       PartyA: normalized,
       PartyB: shortcode,
       PhoneNumber: normalized,
@@ -554,7 +556,7 @@ app.post('/api/mpesa/callback', async (req, res, next) => {
     const receipt = items.MpesaReceiptNumber || null;
     const amount = Number(items.Amount || 0);
     const phone = items.PhoneNumber ? String(items.PhoneNumber) : null;
-    const paymentStatus = resultCode === 0 && amount >= 1000 ? 'paid' : 'failed';
+    const paymentStatus = resultCode === 0 && amount >= 500 ? 'paid' : 'failed';
     await db(`UPDATE applications SET payment_status=$1, transaction_code=COALESCE($2, transaction_code), updated_at=NOW() WHERE checkout_request_id=$3`, [paymentStatus, receipt, checkoutRequestId]);
     console.log(JSON.stringify({ checkoutRequestId, resultCode, receipt, phone }));
     res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
