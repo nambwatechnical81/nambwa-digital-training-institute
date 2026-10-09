@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s);
 let applications=[];
-const DOCS=[['passportPhoto','Passport photo'],['kcseCertificate','KCSE certificate'],['kcpeCertificate','KCPE certificate'],['birthCertificate','Birth certificate'],['chiefRecommendation','Chief recommendation']];
+const DOCS=[['passportPhoto','Passport photo'],['kcseCertificate','KCSE certificate'],['kcpeCertificate','KCPE certificate'],['birthCertificate','Birth certificate'],['chiefRecommendation','Parent/Guardian Consent']];
 
 document.addEventListener('DOMContentLoaded',()=>{
   $('#loginBtn')?.addEventListener('click',login);
@@ -34,7 +34,7 @@ async function loadApps(){
 function renderApplications(){
   const box=$('#apps');if(!box)return;
   const q=($('#appSearch')?.value||'').trim().toLowerCase();const status=$('#appStatusFilter')?.value||'all';
-  const rows=applications.filter(a=>{const hay=[a.id,a.fullName,a.phone,a.email,a.course,a.intake,a.paymentMethod,a.transactionCode,a.paymentStatus,a.applicationStatus].join(' ').toLowerCase();return(!q||hay.includes(q))&&(status==='all'||String(a.applicationStatus).toLowerCase()===status||String(a.paymentStatus).toLowerCase()===status);});
+  const rows=applications.filter(a=>{const hay=[a.id,a.fullName,a.phone,a.email,a.course,a.intake,a.learningMode,a.paymentMethod,a.transactionCode,a.paymentStatus,a.applicationStatus].join(' ').toLowerCase();return(!q||hay.includes(q))&&(status==='all'||String(a.applicationStatus).toLowerCase()===status||String(a.paymentStatus).toLowerCase()===status);});
   if(!rows.length){box.innerHTML='<div class="card form-card"><p class="muted">No applications match the current search or status filter.</p></div>';return;}
   box.innerHTML=rows.map(applicationCard).join('');
 }
@@ -58,7 +58,7 @@ function applicationCard(a){
     '<div class="status-stack"><span class="status-pill '+statusClass+'">Application: '+esc(a.applicationStatus)+'</span><span class="status-pill '+paymentClass+'">Payment: '+esc(a.paymentStatus)+'</span></div></div>'+
     '<div class="application-grid">'+
     '<section><h4>Applicant details</h4><div class="detail-list"><div><span>Full name</span><strong>'+esc(a.fullName)+'</strong></div><div><span>Phone</span><a href="tel:'+esc(a.phone)+'">'+esc(phone)+'</a></div><div><span>Email</span><a href="mailto:'+esc(a.email)+'">'+esc(a.email)+'</a></div></div></section>'+
-    '<section><h4>Course & intake</h4><div class="detail-list"><div><span>Course</span><strong>'+esc(a.course)+'</strong></div><div><span>Intake</span><strong>'+esc(a.intake)+'</strong></div><div><span>Application fee</span><strong>KSh '+esc(Number(a.amount||0).toLocaleString())+'</strong></div></div></section>'+
+    '<section><h4>Course & intake</h4><div class="detail-list"><div><span>Course</span><strong>'+esc(a.course)+'</strong></div><div><span>Intake</span><strong>'+esc(a.intake)+'</strong></div><div><span>Mode of learning</span><strong>'+esc(a.learningMode||'Not recorded')+'</strong></div><div><span>Application fee</span><strong>KSh '+esc(Number(a.amount||0).toLocaleString())+'</strong></div></div></section>'+
     '<section><h4>Payment</h4><div class="detail-list"><div><span>Payment method</span><strong>'+esc(a.paymentMethod)+'</strong></div><div><span>Transaction code</span><strong>'+esc(a.transactionCode||'Not provided')+'</strong></div><div><span>Last updated</span><strong>'+esc(formatDate(a.updatedAt))+'</strong></div></div></section>'+
     '<section><h4>Documents <span class="doc-count">'+esc(a.documentsCount??0)+'/5</span></h4><div class="document-list">'+docLinks+'</div></section>'+
     '</div><div class="application-actions"><a class="btn secondary" href="mailto:'+esc(a.email)+'">Email applicant</a><a class="btn secondary" href="tel:'+esc(a.phone)+'">Call applicant</a>'+

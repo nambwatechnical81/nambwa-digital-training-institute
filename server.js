@@ -61,7 +61,7 @@ const DOCUMENT_FIELDS = [
   'birthCertificate',
   'chiefRecommendation'
 ];
-const REQUIRED_DOCUMENTS = ['passportPhoto', 'chiefRecommendation'];
+const REQUIRED_DOCUMENTS = ['passportPhoto'];
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -221,6 +221,7 @@ async function initDb() {
       email TEXT NOT NULL,
       course TEXT NOT NULL,
       intake TEXT NOT NULL,
+      learning_mode TEXT NOT NULL DEFAULT 'Physical',
       payment_method TEXT NOT NULL,
       transaction_code TEXT,
       amount INTEGER NOT NULL DEFAULT 500,
@@ -277,6 +278,7 @@ async function initDb() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS learning_mode TEXT NOT NULL DEFAULT 'Physical'");
 }
 
 function nowRef() {
@@ -298,6 +300,7 @@ function publicApplication(row) {
     email: row.email,
     course: row.course,
     intake: row.intake,
+    learningMode: row.learning_mode || 'Physical',
     paymentMethod: row.payment_method,
     transactionCode: row.transaction_code || '',
     amount: row.amount,
@@ -344,8 +347,9 @@ app.get('/api/config', (_req, res) => {
 
 app.post('/api/applications', upload.fields(DOCUMENT_FIELDS.map(name => ({ name, maxCount: 1 }))), async (req, res, next) => {
   try {
-    const { fullName, phone, email, course, intake, transactionCode, paymentMethod } = req.body || {};
-    if (!fullName || !phone || !email || !course || !intake || !paymentMethod) return res.status(400).json({ error: 'Please complete all required registration fields.' });
+    const { fullName, phone, email, course, intake, learningMode, transactionCode, paymentMethod } = req.body || {};
+    if (!fullName || !phone || !email || !course || !intake || !learningMode || !paymentMethod) return res.status(400).json({ error: 'Please complete all required registration fields.' });
+    if (!['Physical', 'Online'].includes(learningMode)) return res.status(400).json({ error: 'Choose Physical or Online as your mode of learning.' });
     const normalized = normalizePhone(phone);
     if (!normalized) return res.status(400).json({ error: 'Enter a valid Kenyan phone number.' });
     const missing = REQUIRED_DOCUMENTS.filter(name => !req.files?.[name]?.[0]);
@@ -355,9 +359,9 @@ app.post('/api/applications', upload.fields(DOCUMENT_FIELDS.map(name => ({ name,
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query(`INSERT INTO applications (id, full_name, phone, email, course, intake, payment_method, transaction_code, amount, payment_status)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,500,$9)`, [
-        id, String(fullName).trim(), normalized, String(email).trim().toLowerCase(), String(course).trim(), String(intake).trim(), paymentMethod,
+      await client.query(`INSERT INTO applications (id, full_name, phone, email, course, intake, learning_mode, payment_method, transaction_code, amount, payment_status)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,500,$10)`, [
+        id, String(fullName).trim(), normalized, String(email).trim().toLowerCase(), String(course).trim(), String(intake).trim(), learningMode, paymentMethod,
         transactionCode ? String(transactionCode).trim() : null,
         transactionCode ? 'pending-verification' : 'pending-payment'
       ]);
@@ -434,7 +438,7 @@ app.post('/api/logout', (req, res) => req.session.destroy(() => res.json({ ok: t
 
 app.get('/api/student/dashboard', requireRole('student'), async (req, res, next) => {
   try {
-    const r = await db(`SELECT s.id, s.full_name, s.email, s.phone, a.id AS application_id, a.course, a.intake, a.amount, a.payment_status, a.application_status
+    const r = await db(`SELECT s.id, s.full_name, s.email, s.phone, a.id AS application_id, a.course, a.intake, a.learning_mode, a.amount, a.payment_status, a.application_status
                        FROM students s LEFT JOIN applications a ON a.id=s.application_id WHERE s.id=$1`, [req.session.user.id]);
     if (!r.rowCount) return res.status(404).json({ error: 'Student record not found.' });
     const row = r.rows[0];

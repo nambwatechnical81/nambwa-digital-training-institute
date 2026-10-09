@@ -96,6 +96,15 @@ async function logoutPortal(){ await fetch('/api/logout',{method:'POST'}); $('#p
 
 function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));}
 
+const heroPhotoPrimary = document.querySelector('.hero-photo-primary');
+const heroPhotoSecondary = document.querySelector('.hero-photo-secondary');
+if (heroPhotoPrimary && heroPhotoSecondary) {
+  window.setInterval(() => {
+    const showSecond = heroPhotoSecondary.classList.toggle('is-active');
+    heroPhotoPrimary.classList.toggle('is-hidden', showSecond);
+  }, 6000);
+}
+
 document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',()=>$('#nav').classList.remove('open')));
 document.getElementById('year').textContent=new Date().getFullYear();
 renderPrograms();

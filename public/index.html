@@ -62,7 +62,8 @@
         </div>
         <div class="hero-card">
           <div class="hero-card-glow"></div>
-          <img src="/classroom.jpg" alt="NAMBWA students in a computer training class" class="hero-photo">
+          <img src="/classroom.jpg" alt="NAMBWA students in a computer training class" class="hero-photo hero-photo-primary">
+          <img src="/classroom-2.jpg" alt="Students practising computer skills at NAMBWA Digital Training Institute" class="hero-photo hero-photo-secondary">
           <div class="mini-stat"><strong>15</strong><span>Career-ready programs</span></div>
           <div class="mini-stat"><strong>KSh 500</strong><span>Application fee</span></div>
         </div>
@@ -82,15 +83,22 @@
         <div class="form-row"><label>Phone number *<input name="phone" required placeholder="07XX XXX XXX" inputmode="tel"></label><label>Email *<input name="email" type="email" required placeholder="you@example.com"></label></div>
         <label>Program *<select name="course" id="courseSelect" required></select></label>
         <label>Preferred intake *<select name="intake" required><option value="January 2027">January 2027</option><option value="April 2027">April 2027</option><option value="May 2027">May 2027</option><option value="September 2027">September 2027</option></select></label>
+        <fieldset class="learning-mode-field">
+          <legend>Mode of learning *</legend>
+          <div class="learning-choice">
+            <label class="radio"><input type="radio" name="learningMode" value="Physical" required><span>Physical</span></label>
+            <label class="radio"><input type="radio" name="learningMode" value="Online" required><span>Online</span></label>
+          </div>
+        </fieldset>
         <div class="upload-section">
           <div class="upload-title">Required admission documents</div>
           <p class="muted">Upload clear copies of the following documents. PDF, JPG, JPEG or PNG accepted.</p>
           <div class="upload-grid">
             <label class="upload-box"><span>📷 Passport Photo *</span><small>JPG/PNG · max 10MB</small><input type="file" name="passportPhoto" accept="image/jpeg,image/png" required></label>
-            <label class="upload-box"><span>📄 KCSE Certificate <em>Optional</em></span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="kcseCertificate" accept="application/pdf,image/jpeg,image/png"></label>
-            <label class="upload-box"><span>📄 KCPE Certificate <em>Optional</em></span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="kcpeCertificate" accept="application/pdf,image/jpeg,image/png"></label>
-            <label class="upload-box"><span>📜 Birth Certificate <em>Optional</em></span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="birthCertificate" accept="application/pdf,image/jpeg,image/png"></label>
-            <label class="upload-box"><span>📝 Chief's Recommendation *</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="chiefRecommendation" accept="application/pdf,image/jpeg,image/png" required></label>
+            <label class="upload-box"><span>📄 KCSE Certificate</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="kcseCertificate" accept="application/pdf,image/jpeg,image/png"></label>
+            <label class="upload-box"><span>📄 KCPE Certificate</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="kcpeCertificate" accept="application/pdf,image/jpeg,image/png"></label>
+            <label class="upload-box"><span>📜 Birth Certificate</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="birthCertificate" accept="application/pdf,image/jpeg,image/png"></label>
+            <label class="upload-box"><span>📝 Parent/Guardian Consent</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="chiefRecommendation" accept="application/pdf,image/jpeg,image/png"></label>
           </div>
         </div>
         <div class="pay-choice"><label class="radio"><input type="radio" name="paymentMethod" value="till" checked onchange="togglePaymentFields()"><span>Pay by Till</span></label><label class="radio"><input type="radio" name="paymentMethod" value="stk" onchange="togglePaymentFields()"><span>Automatic STK Push</span></label></div>
