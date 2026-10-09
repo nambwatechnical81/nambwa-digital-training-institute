@@ -73,9 +73,10 @@ const DOCUMENT_FIELDS = [
   'kcseCertificate',
   'kcpeCertificate',
   'birthCertificate',
+  'parentGuardianId',
   'chiefRecommendation'
 ];
-const REQUIRED_DOCUMENTS = ['passportPhoto'];
+const REQUIRED_DOCUMENTS = ['passportPhoto', 'parentGuardianId'];
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -236,6 +237,11 @@ async function initDb() {
       course TEXT NOT NULL,
       intake TEXT NOT NULL,
       learning_mode TEXT NOT NULL DEFAULT 'Physical',
+      guardian_name TEXT,
+      guardian_id_number TEXT,
+      guardian_phone TEXT,
+      guardian_designation TEXT,
+      guardian_agreed BOOLEAN NOT NULL DEFAULT FALSE,
       payment_method TEXT NOT NULL,
       transaction_code TEXT,
       amount INTEGER NOT NULL DEFAULT 500,
@@ -293,6 +299,11 @@ async function initDb() {
     );
   `);
   await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS learning_mode TEXT NOT NULL DEFAULT 'Physical'");
+  await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_name TEXT");
+  await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_id_number TEXT");
+  await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_phone TEXT");
+  await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_designation TEXT");
+  await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_agreed BOOLEAN NOT NULL DEFAULT FALSE");
 }
 
 function nowRef() {
@@ -361,23 +372,31 @@ app.get('/api/config', (_req, res) => {
 
 app.post('/api/applications', upload.fields(DOCUMENT_FIELDS.map(name => ({ name, maxCount: 1 }))), async (req, res, next) => {
   try {
-    const { fullName, phone, email, course, intake, learningMode, transactionCode, paymentMethod } = req.body || {};
-    if (!fullName || !phone || !email || !course || !intake || !learningMode || !paymentMethod) return res.status(400).json({ error: 'Please complete all required registration fields.' });
+    const { fullName, phone, email, course, intake, learningMode, transactionCode, paymentMethod, guardianName, guardianIdNumber, guardianPhone, guardianDesignation, guardianAgreement } = req.body || {};
+    if (!fullName || !phone || !email || !course || !intake || !learningMode || !paymentMethod ||
+        !guardianName || !guardianIdNumber || !guardianPhone || !guardianDesignation || guardianAgreement !== 'accepted') {
+      return res.status(400).json({ error: 'Complete all required registration and Parent/Guardian consent fields.' });
+    }
     if (!['Physical', 'Online'].includes(learningMode)) return res.status(400).json({ error: 'Choose Physical or Online as your mode of learning.' });
+    if (!['Parent', 'Guardian'].includes(guardianDesignation)) return res.status(400).json({ error: 'Choose Parent or Guardian as the designation.' });
+    const receiptCode = String(transactionCode || '').trim().toUpperCase();
+    if (!/^[A-Z0-9]{6,15}$/.test(receiptCode)) return res.status(400).json({ error: 'A valid M-Pesa transaction code is required before you can submit.' });
     const normalized = normalizePhone(phone);
-    if (!normalized) return res.status(400).json({ error: 'Enter a valid Kenyan phone number.' });
+    if (!normalized) return res.status(400).json({ error: 'Enter a valid Kenyan student phone number.' });
+    const normalizedGuardianPhone = normalizePhone(guardianPhone);
+    if (!normalizedGuardianPhone) return res.status(400).json({ error: 'Enter a valid Kenyan Parent/Guardian phone number.' });
     const missing = REQUIRED_DOCUMENTS.filter(name => !req.files?.[name]?.[0]);
-    if (missing.length) return res.status(400).json({ error: 'Please upload all required documents.' });
+    if (missing.length) return res.status(400).json({ error: 'Please upload the student passport photo and Parent/Guardian ID copy.' });
 
     const id = nowRef();
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query(`INSERT INTO applications (id, full_name, phone, email, course, intake, learning_mode, payment_method, transaction_code, amount, payment_status)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,500,$10)`, [
-        id, String(fullName).trim(), normalized, String(email).trim().toLowerCase(), String(course).trim(), String(intake).trim(), learningMode, paymentMethod,
-        transactionCode ? String(transactionCode).trim() : null,
-        transactionCode ? 'pending-verification' : 'pending-payment'
+      await client.query(`INSERT INTO applications
+        (id, full_name, phone, email, course, intake, learning_mode, guardian_name, guardian_id_number, guardian_phone, guardian_designation, guardian_agreed, payment_method, transaction_code, amount, payment_status)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,500,'pending-verification')`, [
+        id, String(fullName).trim(), normalized, String(email).trim().toLowerCase(), String(course).trim(), String(intake).trim(), learningMode,
+        String(guardianName).trim(), String(guardianIdNumber).trim(), normalizedGuardianPhone, guardianDesignation, true, paymentMethod, receiptCode
       ]);
       for (const field of DOCUMENT_FIELDS) {
         const file = req.files?.[field]?.[0];
@@ -396,7 +415,7 @@ app.post('/api/applications', upload.fields(DOCUMENT_FIELDS.map(name => ({ name,
     } finally {
       client.release();
     }
-    res.status(201).json({ applicationId: id, paymentStatus: transactionCode ? 'pending-verification' : 'pending-payment', message: 'Application received.' });
+    res.status(201).json({ applicationId: id, paymentStatus: 'pending-verification', message: 'Application received. Payment code is required for institute verification.' });
   } catch (err) { next(err); }
 });
 

@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s);
 let applications=[];
-const DOCS=[['passportPhoto','Passport photo'],['kcseCertificate','KCSE certificate'],['kcpeCertificate','KCPE certificate'],['birthCertificate','Birth certificate'],['chiefRecommendation','Parent/Guardian Consent']];
+const DOCS=[['passportPhoto','Passport photo'],['kcseCertificate','KCSE certificate'],['kcpeCertificate','KCPE certificate'],['birthCertificate','Birth certificate'],['parentGuardianId','Parent/Guardian ID copy'],['chiefRecommendation','Previous consent document']];
 
 document.addEventListener('DOMContentLoaded',()=>{
   $('#loginBtn')?.addEventListener('click',login);
@@ -59,8 +59,9 @@ function applicationCard(a){
     '<div class="application-grid">'+
     '<section><h4>Applicant details</h4><div class="detail-list"><div><span>Full name</span><strong>'+esc(a.fullName)+'</strong></div><div><span>Phone</span><a href="tel:'+esc(a.phone)+'">'+esc(phone)+'</a></div><div><span>Email</span><a href="mailto:'+esc(a.email)+'">'+esc(a.email)+'</a></div></div></section>'+
     '<section><h4>Course & intake</h4><div class="detail-list"><div><span>Course</span><strong>'+esc(a.course)+'</strong></div><div><span>Intake</span><strong>'+esc(a.intake)+'</strong></div><div><span>Mode of learning</span><strong>'+esc(a.learningMode||'Not recorded')+'</strong></div><div><span>Application fee</span><strong>KSh '+esc(Number(a.amount||0).toLocaleString())+'</strong></div></div></section>'+
+    '<section><h4>Parent/Guardian consent</h4><div class="detail-list"><div><span>Name</span><strong>'+esc(a.parentGuardian?.name||'Not provided')+'</strong></div><div><span>ID number</span><strong>'+esc(a.parentGuardian?.idNumber||'Not provided')+'</strong></div><div><span>Phone</span><strong>'+esc(a.parentGuardian?.phone||'Not provided')+'</strong></div><div><span>Designation</span><strong>'+esc(a.parentGuardian?.designation||'Not provided')+'</strong></div><div><span>Fees and damage agreement</span><strong>'+(a.parentGuardian?.agreementAccepted?'Accepted':'Not accepted')+'</strong></div></div></section>'+
     '<section><h4>Payment</h4><div class="detail-list"><div><span>Payment method</span><strong>'+esc(a.paymentMethod)+'</strong></div><div><span>Transaction code</span><strong>'+esc(a.transactionCode||'Not provided')+'</strong></div><div><span>Last updated</span><strong>'+esc(formatDate(a.updatedAt))+'</strong></div></div></section>'+
-    '<section><h4>Documents <span class="doc-count">'+esc(a.documentsCount??0)+'/5</span></h4><div class="document-list">'+docLinks+'</div></section>'+
+    '<section><h4>Documents <span class="doc-count">'+esc(a.documentsCount??0)+'/6</span></h4><div class="document-list">'+docLinks+'</div></section>'+
     '</div><div class="application-actions"><a class="btn secondary" href="mailto:'+esc(a.email)+'">Email applicant</a><a class="btn secondary" href="tel:'+esc(a.phone)+'">Call applicant</a>'+
     (approved?'<span class="approved-note">Application approved</span>':'<button class="btn primary" data-verify-id="'+esc(a.id)+'">Verify payment & approve</button>')+
     '</div></article>';

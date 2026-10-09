@@ -38,7 +38,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=20261009-3">
+  <link rel="stylesheet" href="/styles.css?v=20261009-4">
 </head>
 <body>
   <div class="topbar"><div class="container topbar-inner"><span>Practical digital skills for a changing world</span><span>Application fee: <strong>KSh 500</strong> · Till <strong>354536</strong></span></div></div>
@@ -72,7 +72,7 @@
 
     <section class="section stats-section"><div class="container stats"><div><strong>15</strong><span>Programs</span></div><div><strong>KSh 500</strong><span>Application fee</span></div><div><strong>24/7</strong><span>Online classes & portal access</span></div><div><strong>100%</strong><span>Digital-first admission</span></div></div></section>
 
-    <section id="about" class="section"><div class="container two-col"><div><div class="section-kicker">ABOUT NAMBWA</div><h2>Technology education designed around practical skills.</h2><img src="/about-classroom.jpg" alt="NAMBWA students learning practical computer skills" class="about-photo"></div><div><p class="lead">NAMBWA Digital Training Institute is positioned as a modern skills institution helping learners gain practical confidence in everyday computing, creative technology, networking and emerging digital tools.</p><p>Online classes are available, giving learners the flexibility to study from wherever they are while staying connected to their course materials and support.</p><p>Our website is designed to make the journey simple: discover a program, register online, pay the KSh 500 application fee, track your application and continue learning through your student portal.</p><div class="feature-list"><span>Practical, job-relevant learning</span><span>Digital admission workflow</span><span>Online classes available</span><span>Learning materials online</span><span>Results and certificates portal</span></div></div></div></section>
+    <section id="about" class="section"><div class="container two-col"><div><div class="section-kicker">ABOUT NAMBWA</div><h2>Technology education designed around practical skills.</h2><img src="/classroom.jpg" onerror="this.onerror=null;this.src='/classroom-2.webp';" alt="NAMBWA students learning practical computer skills" class="about-photo" loading="lazy"></div><div><p class="lead">NAMBWA Digital Training Institute is positioned as a modern skills institution helping learners gain practical confidence in everyday computing, creative technology, networking and emerging digital tools.</p><p>Online classes are available, giving learners the flexibility to study from wherever they are while staying connected to their course materials and support.</p><p>Our website is designed to make the journey simple: discover a program, register online, pay the KSh 500 application fee, track your application and continue learning through your student portal.</p><div class="feature-list"><span>Practical, job-relevant learning</span><span>Digital admission workflow</span><span>Online classes available</span><span>Learning materials online</span><span>Results and certificates portal</span></div></div></div></section>
 
     <section id="programs" class="section soft"><div class="container"><div class="section-head"><div><div class="section-kicker">OUR PROGRAMS</div><h2>Choose a program. Start building.</h2></div><p>Explore our 15 practical programs, including on-campus and online learning options.</p></div><div class="program-grid" id="programGrid"></div></div></section>
 
@@ -83,13 +83,23 @@
         <div class="form-row"><label>Phone number *<input name="phone" required placeholder="07XX XXX XXX" inputmode="tel"></label><label>Email *<input name="email" type="email" required placeholder="you@example.com"></label></div>
         <label>Program *<select name="course" id="courseSelect" required></select></label>
         <label>Preferred intake *<select name="intake" required><option value="January">January</option><option value="March">March</option><option value="May">May</option><option value="July">July</option><option value="September">September</option><option value="November">November</option></select></label>
-        <fieldset class="learning-mode-field">
-          <legend>Mode of learning *</legend>
-          <div class="learning-choice">
-            <label class="radio"><input type="radio" name="learningMode" value="Physical" required><span>Physical</span></label>
-            <label class="radio"><input type="radio" name="learningMode" value="Online" required><span>Online</span></label>
+        <label>Mode of learning *<select name="learningMode" required><option value="">Choose mode of learning</option><option value="Physical">Physical</option><option value="Online">Online</option></select></label>
+        <section class="guardian-consent-section" aria-labelledby="guardianConsentTitle">
+          <h3 id="guardianConsentTitle">Mandatory Parent/Guardian Consent</h3>
+          <p class="muted">A parent or guardian must complete this section before the student can submit an application.</p>
+          <div class="form-row">
+            <label>Parent/Guardian full name *<input name="guardianName" required autocomplete="name" placeholder="Full name as shown on ID"></label>
+            <label>Parent/Guardian ID number *<input name="guardianIdNumber" required autocomplete="off" maxlength="20" placeholder="National ID number"></label>
           </div>
-        </fieldset>
+          <div class="form-row">
+            <label>Parent/Guardian phone number *<input name="guardianPhone" type="tel" required inputmode="tel" autocomplete="tel" placeholder="07XX XXX XXX"></label>
+            <label>Designation *<select name="guardianDesignation" required><option value="">Select designation</option><option value="Parent">Parent</option><option value="Guardian">Guardian</option></select></label>
+          </div>
+          <div class="guardian-agreement">
+            <label class="consent-check"><input type="checkbox" name="guardianAgreement" value="accepted" required><span>I confirm that I am the student's parent or guardian. I agree to pay the student's fees on time and accept responsibility for any damage costs incurred by the student during the learning period.</span></label>
+          </div>
+          <label class="upload-box guardian-id-upload"><span>📄 Parent/Guardian ID copy *</span><small>Upload a clear JPG, PNG or PDF copy · max 10MB</small><input type="file" name="parentGuardianId" accept="application/pdf,image/jpeg,image/png" required></label>
+        </section>
         <div class="upload-section">
           <div class="upload-title">Required admission documents</div>
           <p class="muted">Upload clear copies of the following documents. PDF, JPG, JPEG or PNG accepted.</p>
@@ -98,12 +108,10 @@
             <label class="upload-box"><span>📄 KCSE Certificate</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="kcseCertificate" accept="application/pdf,image/jpeg,image/png"></label>
             <label class="upload-box"><span>📄 KCPE Certificate</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="kcpeCertificate" accept="application/pdf,image/jpeg,image/png"></label>
             <label class="upload-box"><span>📜 Birth Certificate</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="birthCertificate" accept="application/pdf,image/jpeg,image/png"></label>
-            <label class="upload-box"><span>📝 Parent/Guardian Consent</span><small>PDF/JPG/PNG · max 10MB</small><input type="file" name="chiefRecommendation" accept="application/pdf,image/jpeg,image/png"></label>
           </div>
         </div>
-        <div class="pay-choice"><label class="radio"><input type="radio" name="paymentMethod" value="till" checked onchange="togglePaymentFields()"><span>Pay by Till</span></label><label class="radio"><input type="radio" name="paymentMethod" value="stk" onchange="togglePaymentFields()"><span>Automatic STK Push</span></label></div>
-        <div id="tillFields"><label>M-Pesa transaction code<input name="transactionCode" placeholder="Enter code after paying the Till"></label><div class="hint">Pay KSh 500 to Till <strong>354536</strong>, then enter the transaction code above.</div></div>
-        <div id="stkFields" class="hidden"><div class="stk-box">We’ll request KSh 500 on the phone number you provide. Your application reference is used in the payment account reference.</div></div>
+        <input type="hidden" name="paymentMethod" value="till">
+        <div id="tillFields"><label>M-Pesa transaction code *<input name="transactionCode" required minlength="6" maxlength="15" pattern="[A-Za-z0-9]{6,15}" autocapitalize="characters" spellcheck="false" placeholder="Enter your M-Pesa receipt code"></label><div class="hint">Pay the KSh 500 application fee to Till <strong>354536</strong> first. Enter the M-Pesa receipt code to submit. Applications without a code are not accepted.</div></div>
         <button class="btn primary full" type="submit" id="submitBtn">Submit application</button>
         <p class="small-note">By submitting, you confirm that the information provided is accurate.</p>
         <div id="formMessage" class="form-message" role="status"></div>
@@ -119,6 +127,6 @@
 
   <div class="modal hidden" id="successModal"><div class="modal-card"><button class="close" onclick="closeModal()">×</button><div class="success-icon">✓</div><div class="section-kicker">APPLICATION RECEIVED</div><h2>You’re on your way.</h2><p id="successText"></p><div class="ref-box"><span>Application reference</span><strong id="successRef"></strong></div><a class="btn primary full" href="#portal" onclick="closeModal()">Go to Student Portal</a></div></div>
 
-  <script src="/app.js?v=20261009-3"></script>
+  <script src="/app.js?v=20261009-4"></script>
 </body>
 </html>

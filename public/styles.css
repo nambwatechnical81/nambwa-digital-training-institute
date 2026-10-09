@@ -31,3 +31,16 @@
 .about-photo{display:block;width:100%;max-width:620px;height:auto;aspect-ratio:4/3;max-height:470px;object-fit:cover;object-position:center;background:#f5f8fb}
 @media(max-width:950px){.hero-card{min-height:0;aspect-ratio:4/3}}
 @media(max-width:600px){.hero-card{min-height:0;aspect-ratio:4/3}}
+
+/* Clear full-image treatment for About NAMBWA */
+#about .about-photo{display:block;width:100%;max-width:680px;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain;object-position:center;filter:none;opacity:1;visibility:visible;border:1px solid #dbe4ef;border-radius:18px;background:#fff;box-shadow:0 12px 28px rgba(6,35,75,.12);margin-top:24px}
+/* Required parent/guardian consent form */
+.guardian-consent-section{margin:24px 0;padding:20px;border:1px solid #c9d8e9;border-radius:18px;background:#f7faff}
+.guardian-consent-section h3{font-family:Poppins,sans-serif;color:var(--blue);font-size:18px;line-height:1.35;margin:0 0 7px}
+.guardian-consent-section>p{margin:0 0 12px}
+.guardian-consent-section .form-row{gap:12px}
+.guardian-agreement{border:1px solid #cad7e8;background:#fff;border-radius:12px;padding:14px;margin-top:17px}
+.guardian-consent-section .consent-check{display:flex;align-items:flex-start;gap:10px;margin:0;font-size:12px;font-weight:600;line-height:1.6}
+.guardian-consent-section .consent-check input{width:19px;min-width:19px;min-height:19px;height:19px;margin:3px 0 0;padding:0;flex:0 0 auto;accent-color:var(--blue)}
+.guardian-consent-section .guardian-id-upload{display:block;margin-top:15px}
+@media(max-width:600px){.guardian-consent-section{padding:15px}.guardian-consent-section .form-row{grid-template-columns:1fr;gap:0}}

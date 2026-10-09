@@ -22,45 +22,27 @@ function renderPrograms(){
 }
 function chooseCourse(i){ $('#courseSelect').value=PROGRAMS[i].name; }
 function toggleMenu(){ $('#nav').classList.toggle('open'); }
-function togglePaymentFields(){ const m=document.querySelector('input[name="paymentMethod"]:checked').value; $('#tillFields').classList.toggle('hidden',m!=='till'); $('#stkFields').classList.toggle('hidden',m!=='stk'); }
 function showMessage(text,ok=false){ const el=$('#formMessage'); el.textContent=text; el.style.color=ok?'#08743f':'#b42318'; }
 function openModal(ref, text){ $('#successRef').textContent=ref; $('#successText').textContent=text; $('#successModal').classList.remove('hidden'); }
 function closeModal(){ $('#successModal').classList.add('hidden'); }
 
 $('#admissionForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
-  const f=new FormData(e.currentTarget);
+  const form=e.currentTarget;
+  const f=new FormData(form);
   const data=Object.fromEntries(f.entries());
   const btn=$('#submitBtn'); btn.disabled=true; btn.textContent='Submitting…'; showMessage('');
   try{
-    let result;
-    try {
-      const response=await fetch('/api/applications',{method:'POST',body:f});
-      result=await response.json();
-      if(!response.ok) throw new Error(result.error||'Unable to submit application.');
-    } catch(apiErr) {
-      // Static-preview fallback: keep demo applications in the browser when no Node backend is running.
-      if (location.protocol === 'file:') throw apiErr;
-      const demoRef='NAMBWA-'+new Date().getFullYear()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
-      result={applicationId:demoRef,paymentStatus:data.transactionCode?'pending-verification':'pending-payment'};
-      const demoApps=JSON.parse(localStorage.getItem('nambwa_demo_apps')||'[]');
-      demoApps.unshift({...data,id:demoRef,amount:500,applicationStatus:'submitted',paymentStatus:result.paymentStatus,documentsUploaded:[...['passportPhoto','kcseCertificate','kcpeCertificate','birthCertificate','chiefRecommendation'].map(k=>f.get(k)).filter(v=>v && v.name).map(v=>v.name)]});
-      localStorage.setItem('nambwa_demo_apps',JSON.stringify(demoApps));
-    }
+    const receipt=String(data.transactionCode||'').trim().toUpperCase();
+    if(!/^[A-Z0-9]{6,15}$/.test(receipt)) throw new Error('Enter a valid M-Pesa transaction code before submitting.');
+    if(data.guardianAgreement!=='accepted') throw new Error('Parent/Guardian consent is required.');
+    f.set('transactionCode',receipt);
+    const response=await fetch('/api/applications',{method:'POST',body:f});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(result.error||'Unable to submit application.');
     localStorage.setItem('nambwa_last_application',result.applicationId);
-    if(data.paymentMethod==='stk'){
-      try {
-        const stk=await fetch('/api/mpesa/stkpush',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:data.phone,applicationId:result.applicationId})});
-        const stkResult=await stk.json();
-        if(!stk.ok) throw new Error(stkResult.error||'Automatic M-Pesa could not be initiated.');
-        openModal(result.applicationId,'Your application is registered. Check your phone for the M-Pesa payment prompt, then keep this reference for your records.');
-      } catch(stkErr) {
-        openModal(result.applicationId,'Your application is registered. Automatic M-Pesa is not active on this preview yet, so please pay KSh 500 to Till 354536 and submit the transaction code for verification.');
-      }
-    } else {
-      openModal(result.applicationId,'Your application has been received. Your Till payment will remain pending verification until the transaction is confirmed by the institute.');
-    }
-    e.currentTarget.reset(); togglePaymentFields();
+    openModal(result.applicationId,'Your application has been received. Your M-Pesa transaction code has been recorded and payment will remain pending verification until the institute confirms it.');
+    form.reset();
   } catch(err){ showMessage(err.message); } finally { btn.disabled=false; btn.textContent='Submit application'; }
 });
 
