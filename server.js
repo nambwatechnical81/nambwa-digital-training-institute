@@ -216,10 +216,18 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { files: DOCUMENT_FIELDS.length, fileSize: 10 * 1024 * 1024 },
+  limits: { files: DOCUMENT_FIELDS.length, fileSize: 20 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = new Set(['image/jpeg', 'image/png', 'application/pdf']);
-    cb(allowed.has(file.mimetype) ? null : new Error('Only JPG, PNG or PDF files are allowed.'));
+    // Accept common formats from phones, including iPhone HEIC/HEIF and WebP.
+    // Some mobile file pickers report application/octet-stream, so also check a safe filename extension.
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const allowedExt = new Set(['.jpg', '.jpeg', '.png', '.pdf', '.webp', '.heic', '.heif']);
+    const allowedMime = new Set([
+      'image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'application/x-pdf',
+      'image/webp', 'image/heic', 'image/heif', 'application/octet-stream'
+    ]);
+    const accepted = allowedExt.has(ext) && allowedMime.has(file.mimetype);
+    cb(accepted ? null : new Error('Unsupported document type. Please use JPG, PNG, WEBP, HEIC/HEIF or PDF.'));
   }
 });
 
@@ -603,10 +611,11 @@ app.post('/api/mpesa/callback', async (req, res, next) => {
 app.use((err, _req, res, _next) => {
   console.error(err);
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Each uploaded document must be 10MB or smaller.' });
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Each uploaded document must be 20MB or smaller.' });
     return res.status(400).json({ error: `Upload error: ${err.message}` });
   }
-  if (err && (err.message === 'Only JPG, PNG or PDF files are allowed.')) return res.status(400).json({ error: err.message });
+  if (err && err.message && err.message.startsWith('Unsupported document type.')) return res.status(400).json({ error: err.message });
+  if (err && err.message === 'File too large') return res.status(400).json({ error: 'Each uploaded document must be 20MB or smaller.' });
   res.status(500).json({ error: 'Unable to process the request.' });
 });
 
