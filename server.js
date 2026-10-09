@@ -14,6 +14,20 @@ const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
+
+// Rebuild the optimized high-quality classroom carousel image from committed base64 parts.
+const classroomAssetParts = [
+  'asset-parts/classroom-2.part01.b64',
+  'asset-parts/classroom-2.part02.b64',
+  'asset-parts/classroom-2.part03.b64',
+  'asset-parts/classroom-2.part04.b64',
+  'asset-parts/classroom-2.part05.b64',
+  'asset-parts/classroom-2.part06.b64'
+];
+const classroomAssetBase64 = classroomAssetParts
+  .map(file => fs.readFileSync(path.join(__dirname, file), 'utf8').trim())
+  .join('');
+fs.writeFileSync(path.join(PUBLIC_DIR, 'classroom-2.webp'), Buffer.from(classroomAssetBase64, 'base64'));
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 
