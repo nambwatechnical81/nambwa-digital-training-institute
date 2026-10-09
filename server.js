@@ -142,7 +142,15 @@ app.get(['/logo.jpg', '/classroom.jpg', '/about-classroom.jpg'], (req, res) => {
   res.sendFile(path.join(__dirname, file));
 });
 
-app.use(express.static(PUBLIC_DIR, { maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0 }));
+app.use(express.static(PUBLIC_DIR, {
+  maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+  setHeaders: (res, filePath) => {
+    // Always fetch the latest HTML so users receive changed form fields and upload rules.
+    if (path.basename(filePath) === 'index.html') {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
 app.get('/programs/:slug', (req, res) => {
   const program = PROGRAMS.find(([slug]) => slug === req.params.slug);
   if (!program) {
