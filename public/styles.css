@@ -23,3 +23,11 @@
 .hero-photo{transition:opacity .8s ease-in-out}.hero-photo-primary.is-hidden{opacity:0}.hero-photo-secondary{opacity:0;transition:opacity .8s ease-in-out}.hero-photo-secondary.is-active{opacity:1}
 /* Clear, selectable learning-mode options */
 .learning-mode-field{border:0;padding:0;margin:18px 0 0;min-width:0}.learning-mode-field legend{font-size:12px;font-weight:800;margin-bottom:8px}.learning-choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.learning-choice .radio span{text-align:center;padding:13px 12px;font-size:12px}
+
+/* Improved visibility and full-frame classroom photos */
+.hero-card{min-height:0;aspect-ratio:4/3}
+.hero-photo{object-fit:cover;object-position:center;filter:none}
+.hero-card:after{background:linear-gradient(180deg,rgba(4,24,63,.02),rgba(4,24,63,.12))}
+.about-photo{display:block;width:100%;max-width:620px;height:auto;aspect-ratio:4/3;max-height:470px;object-fit:cover;object-position:center;background:#f5f8fb}
+@media(max-width:950px){.hero-card{min-height:0;aspect-ratio:4/3}}
+@media(max-width:600px){.hero-card{min-height:0;aspect-ratio:4/3}}

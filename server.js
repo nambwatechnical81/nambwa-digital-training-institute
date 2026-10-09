@@ -120,8 +120,8 @@ app.get('/sitemap.xml', (req, res) => {
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`);
 });
 
-app.get(['/logo.jpg', '/classroom.jpg'], (req, res) => {
-  const allowed = new Set(['logo.jpg', 'classroom.jpg']);
+app.get(['/logo.jpg', '/classroom.jpg', '/about-classroom.jpg'], (req, res) => {
+  const allowed = new Set(['logo.jpg', 'classroom.jpg', 'about-classroom.jpg']);
   const file = path.basename(req.path);
   if (!allowed.has(file)) return res.status(404).end();
   res.sendFile(path.join(__dirname, file));
