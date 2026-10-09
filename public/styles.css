@@ -44,3 +44,16 @@
 .guardian-consent-section .consent-check input{width:19px;min-width:19px;min-height:19px;height:19px;margin:3px 0 0;padding:0;flex:0 0 auto;accent-color:var(--blue)}
 .guardian-consent-section .guardian-id-upload{display:block;margin-top:15px}
 @media(max-width:600px){.guardian-consent-section{padding:15px}.guardian-consent-section .form-row{grid-template-columns:1fr;gap:0}}
+
+/* Make M-Pesa receipt codes prominent during administrator review */
+.mpesa-review{grid-column:1/-1;border:2px solid #d7a02c;border-radius:14px;padding:16px;background:#fffaf0}
+.mpesa-review.has-code{border-color:#14915d;background:#f0fbf5}
+.mpesa-review h4{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
+.mpesa-code-status{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;background:#fff0c5;color:#7d4e00;font:700 11px Inter,sans-serif;white-space:nowrap}
+.mpesa-review.has-code .mpesa-code-status{background:#d6f5e3;color:#075c36}
+.mpesa-code-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.mpesa-code-row code{display:inline-block;max-width:100%;overflow-wrap:anywhere;background:#fff;border:1px solid #c9d8e5;border-radius:9px;padding:10px 14px;color:#102e56;font:800 20px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em}
+.mpesa-review p{margin:10px 0 0;color:#475569;font-size:12px;line-height:1.6}
+.mpesa-copy-btn{padding:8px 12px;min-height:38px}
+.mpesa-review .btn:disabled{opacity:.7;cursor:not-allowed}
+@media(max-width:600px){.mpesa-review h4{align-items:flex-start;flex-direction:column}.mpesa-code-row code{font-size:17px}}

@@ -526,8 +526,13 @@ app.get('/api/admin/applications', requireRole('admin'), async (_req, res, next)
 });
 app.post('/api/admin/applications/:id/verify', requireRole('admin'), async (req, res, next) => {
   try {
+    const existing = await db('SELECT id, transaction_code FROM applications WHERE id=$1', [req.params.id]);
+    if (!existing.rowCount) return res.status(404).json({ error: 'Application not found.' });
+    if (!String(existing.rows[0].transaction_code || '').trim()) {
+      return res.status(400).json({ error: 'Cannot approve this application without an M-Pesa transaction code.' });
+    }
+    // The administrator must manually compare the submitted code against M-Pesa records before clicking approve.
     const r = await db(`UPDATE applications SET payment_status='paid', application_status='approved', updated_at=NOW() WHERE id=$1 RETURNING *`, [req.params.id]);
-    if (!r.rowCount) return res.status(404).json({ error: 'Application not found.' });
     res.json(publicApplication(r.rows[0]));
   } catch (err) { next(err); }
 });
