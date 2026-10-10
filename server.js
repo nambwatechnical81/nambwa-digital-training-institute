@@ -4,6 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const session = require('express-session');
@@ -295,6 +296,9 @@ async function initDb() {
       phone TEXT NOT NULL,
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'student',
+      email_verified_at TIMESTAMPTZ,
+      email_verification_token_hash TEXT,
+      email_verification_expires_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -324,6 +328,10 @@ async function initDb() {
   await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_phone TEXT");
   await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_designation TEXT");
   await db("ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_agreed BOOLEAN NOT NULL DEFAULT FALSE");
+  await db("ALTER TABLE students ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ");
+  await db("ALTER TABLE students ADD COLUMN IF NOT EXISTS email_verification_token_hash TEXT");
+  await db("ALTER TABLE students ADD COLUMN IF NOT EXISTS email_verification_expires_at TIMESTAMPTZ");
+  await db("CREATE INDEX IF NOT EXISTS students_verification_token_idx ON students (email_verification_token_hash) WHERE email_verification_token_hash IS NOT NULL");
 }
 
 function nowRef() {
@@ -361,9 +369,78 @@ async function getApplication(id) {
   const r = await db('SELECT * FROM applications WHERE id = $1', [id]);
   return r.rows[0];
 }
+function hashVerificationToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+async function saveStudentVerification(executor, application, token) {
+  const passwordHash = await bcrypt.hash(application.id, 12);
+  const tokenHash = hashVerificationToken(token);
+  const saved = await executor.query(`
+    INSERT INTO students
+      (application_id, full_name, email, phone, password_hash, email_verified_at, email_verification_token_hash, email_verification_expires_at)
+    VALUES ($1,$2,$3,$4,$5,NULL,$6,NOW() + INTERVAL '24 hours')
+    ON CONFLICT (email) DO UPDATE SET
+      application_id=EXCLUDED.application_id,
+      full_name=EXCLUDED.full_name,
+      phone=EXCLUDED.phone,
+      password_hash=EXCLUDED.password_hash,
+      email_verified_at=NULL,
+      email_verification_token_hash=EXCLUDED.email_verification_token_hash,
+      email_verification_expires_at=EXCLUDED.email_verification_expires_at,
+      updated_at=NOW()
+    RETURNING id, full_name, email, application_id, email_verified_at
+  `, [application.id, application.full_name, application.email, application.phone, passwordHash, tokenHash]);
+  return saved.rows[0];
+}
+async function sendStudentVerificationEmail({ email, fullName, applicationId, token }) {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const port = Number(process.env.SMTP_PORT || 465);
+  const from = process.env.EMAIL_FROM || user;
+  if (!host || !user || !pass || !from || !Number.isFinite(port)) {
+    const err = new Error('Student email delivery is not configured. Add SMTP_HOST, SMTP_USER, SMTP_PASS and EMAIL_FROM in Render.');
+    err.code = 'EMAIL_NOT_CONFIGURED';
+    throw err;
+  }
+  const baseUrl = (process.env.APP_BASE_URL || 'https://nambwa-digital-training-institute-kenya.onrender.com').replace(/\/+$/, '');
+  const verificationUrl = new URL('/api/student/verify-email', baseUrl);
+  verificationUrl.searchParams.set('token', token);
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: process.env.SMTP_SECURE ? String(process.env.SMTP_SECURE).toLowerCase() === 'true' : port === 465,
+    auth: { user, pass }
+  });
+  try {
+    await transporter.sendMail({
+      from,
+      to: email,
+      subject: 'Verify your NAMBWA Student Portal email',
+      text: [
+        `Hello ${fullName || 'student'},`,
+        '',
+        'Thank you for registering with NAMBWA Digital Training Institute.',
+        'Please verify your email address using the link below before signing in to the Student Portal:',
+        verificationUrl.toString(),
+        '',
+        'The verification link expires in 24 hours and can only be used once.',
+        `Your application reference is your initial Student Portal password: ${applicationId}`,
+        '',
+        'If you did not submit this registration, you can ignore this message.',
+        'NAMBWA Digital Training Institute'
+      ].join('\n')
+    });
+  } finally {
+    transporter.close();
+  }
+}
 function requireRole(role) {
   return (req, res, next) => {
     if (!req.session.user || req.session.user.role !== role) return res.status(401).json({ error: 'Unauthorized.' });
+    if (role === 'student' && !req.session.user.emailVerified) {
+      return res.status(403).json({ error: 'Verify your email address before accessing the student portal.' });
+    }
     next();
   };
 }
@@ -408,14 +485,16 @@ app.post('/api/applications', upload.fields(DOCUMENT_FIELDS.map(name => ({ name,
     const missing = REQUIRED_DOCUMENTS.filter(name => !req.files?.[name]?.[0]);
     if (missing.length) return res.status(400).json({ error: 'Please upload the student passport photo and Parent/Guardian ID copy.' });
 
+    const normalizedEmail = String(email).trim().toLowerCase();
     const id = nowRef();
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(`INSERT INTO applications
         (id, full_name, phone, email, course, intake, learning_mode, guardian_name, guardian_id_number, guardian_phone, guardian_designation, guardian_agreed, payment_method, transaction_code, amount, payment_status)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,500,'pending-verification')`, [
-        id, String(fullName).trim(), normalized, String(email).trim().toLowerCase(), String(course).trim(), String(intake).trim(), learningMode,
+        id, String(fullName).trim(), normalized, normalizedEmail, String(course).trim(), String(intake).trim(), learningMode,
         String(guardianName).trim(), String(guardianIdNumber).trim(), normalizedGuardianPhone, guardianDesignation, true, paymentMethod, receiptCode
       ]);
       for (const field of DOCUMENT_FIELDS) {
@@ -424,6 +503,12 @@ app.post('/api/applications', upload.fields(DOCUMENT_FIELDS.map(name => ({ name,
         await client.query(`INSERT INTO application_documents (application_id, field_name, original_name, stored_name, mime_type, size_bytes)
                   VALUES ($1,$2,$3,$4,$5,$6)`, [id, field, file.originalname, file.filename, file.mimetype, file.size]);
       }
+      await saveStudentVerification(client, {
+        id,
+        full_name: String(fullName).trim(),
+        email: normalizedEmail,
+        phone: normalized
+      }, verificationToken);
       await client.query('COMMIT');
     } catch (e) {
       await client.query('ROLLBACK');
@@ -435,7 +520,26 @@ app.post('/api/applications', upload.fields(DOCUMENT_FIELDS.map(name => ({ name,
     } finally {
       client.release();
     }
-    res.status(201).json({ applicationId: id, paymentStatus: 'pending-verification', message: 'Application received. Payment code is required for institute verification.' });
+    let emailVerificationSent = false;
+    try {
+      await sendStudentVerificationEmail({
+        email: normalizedEmail,
+        fullName: String(fullName).trim(),
+        applicationId: id,
+        token: verificationToken
+      });
+      emailVerificationSent = true;
+    } catch (mailErr) {
+      console.error('Student verification email delivery failed:', mailErr.message);
+    }
+    res.status(201).json({
+      applicationId: id,
+      paymentStatus: 'pending-verification',
+      emailVerificationSent,
+      message: emailVerificationSent
+        ? 'Application received. A verification link has been sent to your registered email.'
+        : 'Application received, but the verification email could not be sent automatically.'
+    });
   } catch (err) { next(err); }
 });
 
@@ -443,34 +547,111 @@ app.get('/api/applications/:id', async (req, res, next) => {
   try {
     const item = await getApplication(req.params.id);
     if (!item) return res.status(404).json({ error: 'Application not found.' });
-    if (req.session.user?.role !== 'admin') {
-      return res.json(publicApplication(item));
+    if (req.session.user?.role === 'admin') return res.json(publicApplication(item));
+    if (req.session.user?.role === 'student' && req.session.user.emailVerified) {
+      const owner = await db('SELECT 1 FROM students WHERE id=$1 AND application_id=$2', [req.session.user.id, item.id]);
+      if (owner.rowCount) return res.json(publicApplication(item));
     }
-    res.json(publicApplication(item));
+    return res.status(401).json({ error: 'Sign in to the verified Student Portal to view application details.' });
   } catch (err) { next(err); }
 });
 
-app.post('/api/student/activate', authLimiter, async (req, res, next) => {
+app.post('/api/student/resend-verification', authLimiter, async (req, res, next) => {
   try {
-    const { applicationId, email, password } = req.body || {};
-    if (!applicationId || !email || !password || password.length < 8) return res.status(400).json({ error: 'Application reference, email and an 8+ character password are required.' });
-    const appRow = await getApplication(applicationId);
-    if (!appRow || appRow.email.toLowerCase() !== String(email).trim().toLowerCase()) return res.status(400).json({ error: 'Application reference and email do not match.' });
-    const existing = await db('SELECT id FROM students WHERE LOWER(email)=LOWER($1)', [String(email).trim()]);
-    if (existing.rowCount) return res.status(409).json({ error: 'An account already exists for this email. Please log in.' });
-    const passwordHash = await bcrypt.hash(password, 12);
-    const r = await db(`INSERT INTO students (application_id, full_name, email, phone, password_hash) VALUES ($1,$2,$3,$4,$5) RETURNING id, full_name, email`, [applicationId, appRow.full_name, appRow.email, appRow.phone, passwordHash]);
-    req.session.user = { id: r.rows[0].id, role: 'student', email: r.rows[0].email, name: r.rows[0].full_name };
-    res.json({ message: 'Student account activated.', user: req.session.user });
+    const { applicationId, email } = req.body || {};
+    const reference = String(applicationId || '').trim();
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!reference || !normalizedEmail) {
+      return res.status(400).json({ error: 'Enter your application reference and the email used during registration.' });
+    }
+    const found = await db('SELECT * FROM applications WHERE id=$1 AND LOWER(email)=LOWER($2)', [reference, normalizedEmail]);
+    if (!found.rowCount) {
+      return res.json({ message: 'If those details match an unverified application, a verification link will be sent.' });
+    }
+    const application = found.rows[0];
+    const current = await db('SELECT id, application_id, email_verified_at FROM students WHERE LOWER(email)=LOWER($1)', [normalizedEmail]);
+    if (current.rowCount && current.rows[0].email_verified_at) {
+      if (current.rows[0].application_id !== application.id) {
+        const passwordHash = await bcrypt.hash(application.id, 12);
+        await db('UPDATE students SET application_id=$1, full_name=$2, phone=$3, password_hash=$4, updated_at=NOW() WHERE id=$5',
+          [application.id, application.full_name, application.phone, passwordHash, current.rows[0].id]);
+      }
+      return res.json({ message: 'This email is already verified. Sign in using your registered email and this application reference.' });
+    }
+    const token = crypto.randomBytes(32).toString('hex');
+    await saveStudentVerification(pool, application, token);
+    try {
+      await sendStudentVerificationEmail({
+        email: application.email,
+        fullName: application.full_name,
+        applicationId: application.id,
+        token
+      });
+    } catch (mailErr) {
+      console.error('Student verification email resend failed:', mailErr.message);
+      if (mailErr.code === 'EMAIL_NOT_CONFIGURED') {
+        return res.status(503).json({ error: 'Email sending is not configured on the website yet. Please contact the institute administrator.' });
+      }
+      return res.status(502).json({ error: 'The verification email could not be sent. Please try again later.' });
+    }
+    res.json({ message: 'A verification link has been sent if these details match an unverified application. Check your inbox and spam folder.' });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/student/verify-email', authLimiter, async (req, res, next) => {
+  try {
+    const token = String(req.query.token || '');
+    if (!/^[a-f0-9]{64}$/i.test(token)) {
+      return res.redirect('/?emailVerification=invalid#portal');
+    }
+    const tokenHash = hashVerificationToken(token);
+    const verified = await db(`
+      UPDATE students
+      SET email_verified_at=NOW(),
+          email_verification_token_hash=NULL,
+          email_verification_expires_at=NULL,
+          updated_at=NOW()
+      WHERE email_verification_token_hash=$1
+        AND email_verification_expires_at > NOW()
+      RETURNING id
+    `, [tokenHash]);
+    if (!verified.rowCount) return res.redirect('/?emailVerification=invalid#portal');
+    return res.redirect('/?emailVerified=1#portal');
   } catch (err) { next(err); }
 });
 
 app.post('/api/student/login', authLimiter, async (req, res, next) => {
   try {
-    const { email, password } = req.body || {};
-    const r = await db('SELECT * FROM students WHERE LOWER(email)=LOWER($1)', [String(email || '').trim()]);
-    if (!r.rowCount || !(await bcrypt.compare(String(password || ''), r.rows[0].password_hash))) return res.status(401).json({ error: 'Invalid email or password.' });
-    req.session.user = { id: r.rows[0].id, role: 'student', email: r.rows[0].email, name: r.rows[0].full_name };
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const reference = String(req.body?.password || '').trim();
+    if (!email || !reference) {
+      return res.status(400).json({ error: 'Enter your registered email and application reference number.' });
+    }
+    const applicationResult = await db(
+      'SELECT id, email FROM applications WHERE id=$1 AND LOWER(email)=LOWER($2)',
+      [reference, email]
+    );
+    if (!applicationResult.rowCount) {
+      return res.status(401).json({ error: 'Invalid registered email or application reference.' });
+    }
+    const studentResult = await db('SELECT * FROM students WHERE LOWER(email)=LOWER($1)', [email]);
+    if (!studentResult.rowCount) {
+      return res.status(403).json({ error: 'Your student account needs email verification. Use Resend verification link with this reference and email.' });
+    }
+    const student = studentResult.rows[0];
+    if (student.application_id !== applicationResult.rows[0].id || !(await bcrypt.compare(reference, student.password_hash))) {
+      return res.status(403).json({ error: 'Use Resend verification link with this application reference to prepare your student sign-in.' });
+    }
+    if (!student.email_verified_at) {
+      return res.status(403).json({ error: 'Your email is not verified yet. Open the verification link we emailed you, or request a new link below.' });
+    }
+    req.session.user = {
+      id: student.id,
+      role: 'student',
+      email: student.email,
+      name: student.full_name,
+      emailVerified: true
+    };
     res.json({ user: req.session.user });
   } catch (err) { next(err); }
 });

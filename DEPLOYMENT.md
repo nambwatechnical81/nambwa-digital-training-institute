@@ -16,6 +16,10 @@ Render services use an ephemeral filesystem by default, so uploaded admission do
 4. Add these secrets in the web service environment:
    - `ADMIN_EMAIL`
    - `ADMIN_PASSWORD_HASH`
+   - `SMTP_PASS` (required for student email verification; for Gmail, use a Google App Password, not your normal account password)
+   - `SMTP_USER` and `EMAIL_FROM` (use the institute's verified sending address)
+   - `SMTP_HOST`, `SMTP_PORT`, and `SMTP_SECURE` (for Gmail: `smtp.gmail.com`, `465`, `true`)
+   - `APP_BASE_URL=https://nambwa-digital-training-institute-kenya.onrender.com`
    - `MPESA_CONSUMER_KEY` (optional until automatic M-Pesa is enabled)
    - `MPESA_CONSUMER_SECRET` (optional)
    - `MPESA_PASSKEY` (optional)
@@ -50,7 +54,7 @@ Admin dashboard: `http://localhost:3000/admin.html`.
 - Rate limiting and security headers are enabled.
 - M-Pesa callback handling stores the receipt against the matching CheckoutRequestID and marks valid KSh 1,000 payments as paid.
 - Back up the database and persistent document disk according to institute policy.
-- Before public launch, test the complete application flow, upload each document type, verify payment, activate a student account, log in, and test the portal on mobile.
+- Before public launch, test the complete application flow, upload each document type, verify payment, receive and open the student email-verification link, sign in using the registered email and application reference, and test the portal on mobile.
 
 
 ## Google Search launch

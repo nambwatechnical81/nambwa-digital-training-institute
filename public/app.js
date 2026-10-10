@@ -41,20 +41,17 @@ $('#admissionForm').addEventListener('submit', async (e)=>{
     const result=await response.json().catch(()=>({}));
     if(!response.ok) throw new Error(result.error||'Unable to submit application.');
     localStorage.setItem('nambwa_last_application',result.applicationId);
-    openModal(result.applicationId,'Your application has been received. Your M-Pesa transaction code has been recorded and payment will remain pending verification until the institute confirms it.');
+    const emailNotice = result.emailVerificationSent
+      ? ` A verification link has been sent to ${data.email}. Open it before signing in. Your application reference is your initial portal password.`
+      : ' Your application reference is your initial portal password, but the verification email could not be sent automatically. Use “Resend verification link” in the Student Portal or contact the institute.';
+    openModal(result.applicationId,'Your application has been received. Your M-Pesa transaction code has been recorded and payment will remain pending verification until the institute confirms it.'+emailNotice);
     form.reset();
   } catch(err){ showMessage(err.message); } finally { btn.disabled=false; btn.textContent='Submit application'; }
 });
 
-async function lookupPortal(){
-  const email=$('#portalEmail')?.value.trim(); const ref=$('#portalRef')?.value.trim(); const msg=$('#portalMessage'); const out=$('#portalResult');
-  if(!email||!ref){if(msg){msg.textContent='Enter your student email and application reference.';msg.style.color='#b42318';}return;}
-  try{ const r=await fetch('/api/applications/'+encodeURIComponent(ref)); const data=await r.json(); if(!r.ok) throw new Error(data.error||'Not found'); if(data.email.toLowerCase()!==email.toLowerCase()) throw new Error('The email does not match this application.'); out.classList.remove('hidden'); out.innerHTML=`<div class="section-kicker">APPLICATION</div><h3 style="font-family:Poppins;margin:7px 0 12px">${escapeHtml(data.fullName)}</h3><div class="result-grid"><div><span>Program</span><strong>${escapeHtml(data.course)}</strong></div><div><span>Intake</span><strong>${escapeHtml(data.intake)}</strong></div><div><span>Mode of learning</span><strong>${escapeHtml(data.learningMode||'—')}</strong></div><div><span>Payment</span><strong>${escapeHtml(data.paymentStatus)}</strong></div><div><span>Application</span><strong>${escapeHtml(data.applicationStatus)}</strong></div></div><div class="portal-actions"><button onclick="showPortalPanel('activatePanel', document.querySelector('.portal-tab:nth-child(2)'))">Activate account</button></div>`;
-  }catch(err){out.classList.add('hidden');if(msg){msg.textContent=err.message;msg.style.color='#b42318';}}
-}
 function showPortalPanel(id, button){
   document.querySelectorAll('.portal-tab').forEach(b=>b.classList.remove('active')); if(button) button.classList.add('active');
-  ['loginPanel','activatePanel'].forEach(x=>document.getElementById(x)?.classList.toggle('hidden',x!==id));
+  ['loginPanel','resendPanel'].forEach(x=>document.getElementById(x)?.classList.toggle('hidden',x!==id));
   document.getElementById('portalResult')?.classList.add('hidden');
 }
 async function studentLogin(){
@@ -62,10 +59,15 @@ async function studentLogin(){
   try{ const r=await fetch('/api/student/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('#studentLoginEmail').value,password:$('#studentLoginPassword').value})}); const data=await r.json(); if(!r.ok) throw new Error(data.error||'Login failed.'); await loadStudentDashboard(); }
   catch(e){msg.textContent=e.message;msg.style.color='#b42318';}
 }
-async function activateStudent(){
-  const msg=$('#activateMessage'); msg.textContent='';
-  try{ const r=await fetch('/api/student/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({applicationId:$('#activateRef').value.trim(),email:$('#activateEmail').value.trim(),password:$('#activatePassword').value})}); const data=await r.json(); if(!r.ok) throw new Error(data.error||'Account activation failed.'); msg.textContent='Account activated. Loading your portal…';msg.style.color='#08743f'; await loadStudentDashboard(); }
-  catch(e){msg.textContent=e.message;msg.style.color='#b42318';}
+async function studentResendVerification(){
+  const msg=$('#resendMessage');
+  msg.textContent='Sending verification link…';msg.style.color='';
+  try{
+    const r=await fetch('/api/student/resend-verification',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({applicationId:$('#resendRef').value.trim(),email:$('#resendEmail').value.trim()})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error||'Could not send verification email.');
+    msg.textContent=data.message||'Check your email for the verification link.';msg.style.color='#08743f';
+  }catch(e){msg.textContent=e.message;msg.style.color='#b42318';}
 }
 async function loadStudentDashboard(){
   const out=$('#portalResult');
@@ -74,7 +76,7 @@ async function loadStudentDashboard(){
   const results=(data.results||[]).map(x=>`<div><span>${escapeHtml(x.unit)}</span><strong>${escapeHtml(x.score??'')} ${escapeHtml(x.grade||'')}</strong></div>`).join('')||'<p>No results published yet.</p>';
   out.classList.remove('hidden'); out.innerHTML=`<div class="section-kicker">MY DASHBOARD</div><h3 style="font-family:Poppins;margin:7px 0 12px">Welcome, ${escapeHtml(data.student.full_name)}</h3><div class="result-grid"><div><span>Program</span><strong>${escapeHtml(data.student.course||'—')}</strong></div><div><span>Intake</span><strong>${escapeHtml(data.student.intake||'—')}</strong></div><div><span>Mode of learning</span><strong>${escapeHtml(data.student.learning_mode||'—')}</strong></div><div><span>Payment</span><strong>${escapeHtml(data.student.payment_status||'—')}</strong></div><div><span>Application</span><strong>${escapeHtml(data.student.application_status||'—')}</strong></div></div><div class="dashboard-card"><strong>Learning materials</strong><div class="dashboard-list">${materials}</div></div><div class="dashboard-card"><strong>Results</strong><div class="result-grid" style="margin-top:12px">${results}</div></div><div class="portal-actions"><button onclick="logoutPortal()">Sign out</button></div>`;
 }
-async function logoutPortal(){ await fetch('/api/logout',{method:'POST'}); $('#portalResult').classList.add('hidden'); showPortalPanel('loginPanel', document.querySelector('.portal-tab')); $('#studentLoginPassword').value=''; }
+async function logoutPortal(){ await fetch('/api/logout',{method:'POST',credentials:'same-origin'}); $('#portalResult').classList.add('hidden'); showPortalPanel('loginPanel', document.querySelector('.portal-tab')); $('#studentLoginPassword').value=''; }
 
 function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));}
 
@@ -89,6 +91,14 @@ if (heroPhotoPrimary && heroPhotoSecondary) {
 
 document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',()=>$('#nav').classList.remove('open')));
 document.getElementById('year').textContent=new Date().getFullYear();
+const emailVerificationState = new URLSearchParams(location.search);
+if (emailVerificationState.get('emailVerified') === '1') {
+  $('#loginMessage').textContent='Email verified successfully. Sign in using your registered email and application reference.';
+  $('#loginMessage').style.color='#08743f';
+} else if (emailVerificationState.get('emailVerification') === 'invalid') {
+  $('#loginMessage').textContent='That verification link is invalid or has expired. Request a new verification link.';
+  $('#loginMessage').style.color='#b42318';
+}
 renderPrograms();
 const requestedCourse = new URLSearchParams(location.search).get('course');
 if (requestedCourse) {
