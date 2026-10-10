@@ -23,17 +23,17 @@ services:
       - key: APP_BASE_URL
         value: https://nambwa-digital-training-institute-kenya.onrender.com
       - key: SMTP_HOST
-        sync: false
+        value: smtp.gmail.com
       - key: SMTP_PORT
         value: "465"
       - key: SMTP_SECURE
         value: "true"
       - key: SMTP_USER
-        sync: false
+        value: nambwadigital@gmail.com
       - key: SMTP_PASS
         sync: false
       - key: EMAIL_FROM
-        sync: false
+        value: NAMBWA Digital Training Institute <nambwadigital@gmail.com>
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD_HASH
