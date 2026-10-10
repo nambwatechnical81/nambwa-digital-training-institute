@@ -235,7 +235,11 @@ const upload = multer({
       'image/webp', 'image/heic', 'image/heif', 'application/octet-stream'
     ]);
     const accepted = allowedExt.has(ext) && allowedMime.has(file.mimetype);
-    cb(accepted ? null : new Error('Unsupported document type. Please use JPG, PNG, WEBP, HEIC/HEIF or PDF.'));
+    if (!accepted) {
+      return cb(new Error('Unsupported document type. Please use JPG, PNG, WEBP, HEIC/HEIF or PDF.'));
+    }
+    // Multer requires the second callback argument to be true to store an accepted file.
+    cb(null, true);
   }
 });
 
